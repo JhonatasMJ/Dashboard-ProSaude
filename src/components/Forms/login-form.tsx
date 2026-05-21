@@ -48,7 +48,7 @@ export function LoginForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="flex w-full max-w-sm flex-col gap-4"
+      className="flex w-full flex-col gap-5"
       noValidate
     >
       <InputLabel
@@ -75,7 +75,7 @@ export function LoginForm() {
         </p>
       )}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button type="submit" size="lg" className="mt-1 w-full" disabled={isSubmitting}>
         {isSubmitting ? "Entrando..." : "Entrar"}
       </Button>
     </form>
