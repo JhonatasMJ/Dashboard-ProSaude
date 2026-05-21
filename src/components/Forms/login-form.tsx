@@ -1,45 +1,48 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { isAxiosError } from "axios";
 import { useState } from "react";
-import { useForm, type Resolver } from "react-hook-form";
+import { Controller, useForm, type Resolver } from "react-hook-form";
+import { toast } from "sonner";
 import { InputLabel } from "@/components/input-label";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/auth.context";
 import { loginSchema } from "@/schemas/login.schema";
+import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
+import {
+  getRememberedEmail,
+  setRememberedEmail,
+} from "@/shared/helpers/remember-email.helper";
 import type { LoginFormData } from "@/types/login-form.types";
 
-interface ApiErrorBody {
-  message?: string;
-}
+const rememberedEmail = getRememberedEmail();
 
 export function LoginForm() {
   const { login } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    control,
-    handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm<LoginFormData>({
+  const { control, handleSubmit } = useForm<LoginFormData>({
     resolver: yupResolver(loginSchema) as Resolver<LoginFormData>,
     defaultValues: {
-      email: "",
+      email: rememberedEmail ?? "",
       password: "",
+      rememberMe: !!rememberedEmail,
     },
   });
 
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
 
-    try {
-      await login(data);
-    } catch (error) {
-      const message = isAxiosError<ApiErrorBody>(error)
-        ? (error.response?.data?.message ?? "Credenciais inválidas")
-        : "Não foi possível entrar. Tente novamente.";
+    if (data.rememberMe) {
+      setRememberedEmail(data.email);
+    } else {
+      setRememberedEmail(null);
+    }
 
-      setError("root", { message });
+    try {
+      await login({ email: data.email, password: data.password });
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Credenciais inválidas"));
     } finally {
       setIsSubmitting(false);
     }
@@ -69,11 +72,27 @@ export function LoginForm() {
         placeholder="••••••••"
       />
 
-      {errors.root && (
-        <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {errors.root.message}
-        </p>
-      )}
+      <Controller
+        name="rememberMe"
+        control={control}
+        render={({ field }) => (
+          <div className="flex items-center gap-2.5">
+            <Checkbox
+              id="remember-me"
+              checked={field.value}
+              onCheckedChange={(checked) =>
+                field.onChange(checked === true)
+              }
+            />
+            <Label
+              htmlFor="remember-me"
+              className="cursor-pointer text-sm font-normal text-muted-foreground"
+            >
+              Lembrar minha conta
+            </Label>
+          </div>
+        )}
+      />
 
       <Button type="submit" size="lg" className="mt-1 w-full" disabled={isSubmitting}>
         {isSubmitting ? "Entrando..." : "Entrar"}
