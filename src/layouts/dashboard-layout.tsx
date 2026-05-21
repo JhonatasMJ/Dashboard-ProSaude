@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { useAuth } from "@/contexts/auth.context";
+import { DashboardProvider } from "@/contexts/dashboard.context";
 
 export default function DashboardLayout() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -21,7 +22,9 @@ export default function DashboardLayout() {
     <div className="flex min-h-svh w-full">
       <AppSidebar />
       <main className="flex flex-1 flex-col overflow-auto bg-background">
-        <Outlet />
+        <DashboardProvider>
+          <Outlet />
+        </DashboardProvider>
       </main>
     </div>
   );
