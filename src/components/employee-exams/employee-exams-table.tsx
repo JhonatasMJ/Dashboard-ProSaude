@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { FileDown, Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ButtonAnimatedIcon } from "@/components/button-animated-icon";
@@ -25,6 +25,11 @@ import {
 } from "@/components/ui/table";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
 import { useEmployeeExams } from "@/hooks/use-employee-exams";
+import {
+  buildEmployeeExamsFilterSummary,
+  fetchEmployeeExamsForReport,
+  generateEmployeeExamsReportPdf,
+} from "@/pdf";
 import { cn } from "@/lib/utils";
 import { EMPLOYEE_EXAMS_PAGE_SIZE } from "@/shared/constants/employee-exams.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
@@ -171,10 +176,12 @@ export function EmployeeExamsTable() {
     setExamDateFromFilter,
     examDateToFilter,
     setExamDateToFilter,
+    exportListParams,
     setPage,
   } = useEmployeeExams();
 
   const [formOpen, setFormOpen] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [editingLink, setEditingLink] = useState<IEmployeeExam | null>(null);
   const [deletingLink, setDeletingLink] = useState<IEmployeeExam | null>(null);
   const plusIconHeader = useButtonAnimatedIcon();
@@ -205,6 +212,34 @@ export function EmployeeExamsTable() {
     setFormOpen(open);
     if (!open) {
       setEditingLink(null);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
+
+    try {
+      const reportLinks = await fetchEmployeeExamsForReport(exportListParams);
+
+      if (reportLinks.length === 0) {
+        toast.error("Nenhum vínculo encontrado para os filtros selecionados.");
+        return;
+      }
+
+      const filterSummary = buildEmployeeExamsFilterSummary(exportListParams, {
+        companies,
+        employees,
+        exams,
+      });
+
+      await generateEmployeeExamsReportPdf(reportLinks, { filterSummary });
+      toast.success("Relatório PDF gerado com sucesso.");
+    } catch (err) {
+      toast.error(
+        getApiErrorMessage(err, "Não foi possível gerar o relatório PDF.")
+      );
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -242,20 +277,32 @@ export function EmployeeExamsTable() {
                 )}
               </p>
             </div>
-            <Button
-              className="shrink-0 rounded-md py-4.5"
-              size="lg"
-              onClick={openCreate}
-              disabled={!canCreate || isLoadingFilters}
-              {...plusIconHeader.rowHandlers}
-            >
-              <ButtonAnimatedIcon
-                icon={PlusIcon}
-                iconRef={plusIconHeader.iconRef}
-                size={16}
-              />
-              Novo vínculo
-            </Button>
+            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+              <Button
+                variant="outline"
+                className="rounded-md py-4.5"
+                size="lg"
+                onClick={handleExportPdf}
+                disabled={isLoading || isLoadingFilters || isExportingPdf}
+              >
+                <FileDown className="size-4" />
+                {isExportingPdf ? "Gerando PDF..." : "Gerar PDF"}
+              </Button>
+              <Button
+                className="rounded-md py-4.5"
+                size="lg"
+                onClick={openCreate}
+                disabled={!canCreate || isLoadingFilters}
+                {...plusIconHeader.rowHandlers}
+              >
+                <ButtonAnimatedIcon
+                  icon={PlusIcon}
+                  iconRef={plusIconHeader.iconRef}
+                  size={16}
+                />
+                Novo vínculo
+              </Button>
+            </div>
           </div>
 
           <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">

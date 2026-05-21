@@ -28,6 +28,7 @@ import { companyService } from "@/shared/services/company.service";
 import { employeeExamService } from "@/shared/services/employee-exam.service";
 import { employeeService } from "@/shared/services/employee.service";
 import { examService } from "@/shared/services/exam.service";
+import type { EmployeeExamsReportListParams } from "@/pdf/employee-exams-report.types";
 import type { EmployeeExamFormData } from "@/types/employee-exam-form.types";
 
 export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
@@ -129,10 +130,8 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
     fetchFilterOptions();
   }, [fetchFilterOptions]);
 
-  const listParams = useMemo(
+  const exportListParams = useMemo<EmployeeExamsReportListParams>(
     () => ({
-      page,
-      pageSize: EMPLOYEE_EXAMS_PAGE_SIZE,
       ...(debouncedProfessionalName
         ? { professionalName: debouncedProfessionalName }
         : {}),
@@ -143,7 +142,6 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       ...(examDateToFilter ? { examDateTo: examDateToFilter } : {}),
     }),
     [
-      page,
       debouncedProfessionalName,
       companyIdFilter,
       employeeIdFilter,
@@ -151,6 +149,15 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       examDateFromFilter,
       examDateToFilter,
     ]
+  );
+
+  const listParams = useMemo(
+    () => ({
+      page,
+      pageSize: EMPLOYEE_EXAMS_PAGE_SIZE,
+      ...exportListParams,
+    }),
+    [page, exportListParams]
   );
 
   const fetchLinks = useCallback(
@@ -288,6 +295,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       examIdFilter,
       examDateFromFilter,
       examDateToFilter,
+      exportListParams,
       page,
       setProfessionalNameFilter,
       setCompanyIdFilter: handleCompanyFilterChange,
@@ -317,6 +325,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       examIdFilter,
       examDateFromFilter,
       examDateToFilter,
+      exportListParams,
       page,
       handleCompanyFilterChange,
       handleEmployeeFilterChange,

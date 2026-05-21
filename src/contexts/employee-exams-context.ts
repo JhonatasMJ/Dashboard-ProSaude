@@ -4,6 +4,7 @@ import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
 import type { IExam } from "@/shared/interfaces/https/exam";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
+import type { EmployeeExamsReportListParams } from "@/pdf/employee-exams-report.types";
 import type { EmployeeExamFormData } from "@/types/employee-exam-form.types";
 
 export interface EmployeeExamsContextValue {
@@ -22,6 +23,7 @@ export interface EmployeeExamsContextValue {
   examIdFilter: string;
   examDateFromFilter: string;
   examDateToFilter: string;
+  exportListParams: EmployeeExamsReportListParams;
   page: number;
   setProfessionalNameFilter: (value: string) => void;
   setCompanyIdFilter: (value: string) => void;
