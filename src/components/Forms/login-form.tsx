@@ -94,7 +94,7 @@ export function LoginForm() {
         )}
       />
 
-      <Button type="submit" size="lg" className="mt-1 w-full" disabled={isSubmitting}>
+      <Button type="submit" size="lg" className="mt-1 w-full py-6" disabled={isSubmitting}>
         {isSubmitting ? "Entrando..." : "Entrar"}
       </Button>
     </form>

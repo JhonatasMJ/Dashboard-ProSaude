@@ -1,17 +1,29 @@
+import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
+
 export interface ICompany {
   id: string;
-  legalName: string;
-  tradeName: string;
+  name: string;
   taxId: string;
   email: string;
   phone: string;
-  address: string;
+  street: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  number: string;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface ICompaniesListParams {
+  name?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface ICompaniesListResponse {
   data: ICompany[];
+  meta: IPaginationMeta;
 }
 
 export interface ICompanyResponse {
@@ -19,10 +31,13 @@ export interface ICompanyResponse {
 }
 
 export interface ICompanyPayload {
-  legalName: string;
-  tradeName: string;
+  name: string;
   taxId: string;
   email: string;
   phone: string;
-  address: string;
+  street: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  number: string;
 }

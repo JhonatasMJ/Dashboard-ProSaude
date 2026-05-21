@@ -1,13 +1,19 @@
 import { proSaudeApi } from "../api/pro-saude";
 import type {
+  ICompaniesListParams,
   ICompaniesListResponse,
   ICompanyPayload,
   ICompanyResponse,
 } from "../interfaces/https/company";
 
 export const companyService = {
-  async list(): Promise<ICompaniesListResponse> {
-    const { data } = await proSaudeApi.get<ICompaniesListResponse>("/companies");
+  async list(
+    params?: ICompaniesListParams
+  ): Promise<ICompaniesListResponse> {
+    const { data } = await proSaudeApi.get<ICompaniesListResponse>(
+      "/companies",
+      { params }
+    );
     return data;
   },
 

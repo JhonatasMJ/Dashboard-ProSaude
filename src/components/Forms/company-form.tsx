@@ -1,11 +1,15 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import type { ReactNode } from "react";
+import { Loader2 } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { useForm, type Resolver } from "react-hook-form";
+import { toast } from "sonner";
 import { InputLabel } from "@/components/input-label";
 import { MaskedInputLabel } from "@/components/masked-input-label";
 import { Button } from "@/components/ui/button";
 import { companySchema } from "@/schemas/company.schema";
-import { cnpjMask, phoneMask } from "@/shared/helpers/input-masks.helper";
+import { companyToFormValues } from "@/shared/helpers/company-form.helper";
+import { cnpjMask, phoneMask, zipCodeMask } from "@/shared/helpers/input-masks.helper";
+import { viacepService } from "@/shared/services/viacep.service";
 import type { CompanyFormData } from "@/types/company-form.types";
 import type { ICompany } from "@/shared/interfaces/https/company";
 import { cn } from "@/lib/utils";
@@ -21,12 +25,16 @@ interface CompanyFormProps {
 }
 
 const emptyValues: CompanyFormData = {
-  legalName: "",
-  tradeName: "",
+  name: "",
   taxId: "",
   email: "",
   phone: "",
-  address: "",
+  zipCode: "",
+  street: "",
+  number: "",
+  neighborhood: "",
+  city: "",
+  state: "",
 };
 
 function FormSection({
@@ -61,20 +69,48 @@ export function CompanyForm({
   onCancel,
 }: CompanyFormProps) {
   const isSheet = variant === "sheet";
+  const [isFetchingCep, setIsFetchingCep] = useState(false);
 
-  const { control, handleSubmit } = useForm<CompanyFormData>({
+  const { control, handleSubmit, setValue, watch } = useForm<CompanyFormData>({
     resolver: yupResolver(companySchema) as Resolver<CompanyFormData>,
     defaultValues: defaultValues
-      ? {
-          legalName: defaultValues.legalName,
-          tradeName: defaultValues.tradeName,
-          taxId: defaultValues.taxId,
-          email: defaultValues.email,
-          phone: defaultValues.phone,
-          address: defaultValues.address,
-        }
+      ? companyToFormValues(defaultValues)
       : emptyValues,
   });
+
+  const zipCode = watch("zipCode");
+
+  const handleFetchAddress = async () => {
+    const digits = zipCode?.replace(/\D/g, "") ?? "";
+
+    if (digits.length !== 8) {
+      toast.error("Informe um CEP válido com 8 dígitos.");
+      return;
+    }
+
+    setIsFetchingCep(true);
+
+    try {
+      const address = await viacepService.getAddressByCep(digits);
+
+      if (!address) {
+        toast.error("CEP não encontrado.");
+        return;
+      }
+
+      setValue("street", address.street, { shouldValidate: true });
+      setValue("neighborhood", address.neighborhood, {
+        shouldValidate: true,
+      });
+      setValue("city", address.city, { shouldValidate: true });
+      setValue("state", address.state, { shouldValidate: true });
+      toast.success("Endereço preenchido pelo CEP.");
+    } catch {
+      toast.error("Não foi possível buscar o CEP. Tente novamente.");
+    } finally {
+      setIsFetchingCep(false);
+    }
+  };
 
   return (
     <form
@@ -89,15 +125,9 @@ export function CompanyForm({
       >
         <InputLabel
           control={control}
-          name="legalName"
-          label="Razão social"
-          placeholder="Razão social da empresa"
-        />
-        <InputLabel
-          control={control}
-          name="tradeName"
-          label="Nome fantasia"
-          placeholder="Nome fantasia"
+          name="name"
+          label="Nome da empresa"
+          placeholder="Nome da empresa"
         />
         <MaskedInputLabel
           control={control}
@@ -128,13 +158,79 @@ export function CompanyForm({
         />
       </FormSection>
 
-      <FormSection title="Endereço">
+      <FormSection
+        title="Endereço"
+        description="Informe o CEP para preencher rua, bairro, cidade e UF automaticamente."
+      >
+        <MaskedInputLabel
+          control={control}
+          name="zipCode"
+          label="CEP"
+          maskOptions={zipCodeMask}
+          placeholder="00000-000"
+          onBlur={() => {
+            const digits = zipCode?.replace(/\D/g, "") ?? "";
+            if (digits.length === 8) {
+              void handleFetchAddress();
+            }
+          }}
+        />
+        <Button
+            type="button"
+            variant="secondary"
+            className="w-full rounded-md py-5"
+            disabled={isFetchingCep || isSubmitting}
+            onClick={handleFetchAddress}
+          >
+            {isFetchingCep ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Buscando CEP...
+              </>
+            ) : (
+              "Buscar endereço pelo CEP"
+            )}
+          </Button>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <InputLabel
+            control={control}
+            name="street"
+            label="Rua"
+            placeholder="Rua, avenida..."
+            containerClassName="sm:col-span-2"
+          />
+          <InputLabel
+            control={control}
+            name="number"
+            label="Número"
+            placeholder="123"
+          />
+        </div>
+
         <InputLabel
           control={control}
-          name="address"
-          label="Endereço completo"
-          placeholder="Rua, número, bairro, cidade — UF"
+          name="neighborhood"
+          label="Bairro"
+          placeholder="Bairro"
         />
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <InputLabel
+            control={control}
+            name="city"
+            label="Cidade"
+            placeholder="Cidade"
+            containerClassName="sm:col-span-2"
+          />
+          <InputLabel
+            control={control}
+            name="state"
+            label="UF"
+            placeholder="SP"
+            maxLength={2}
+          />
+        </div>
       </FormSection>
 
       {!isSheet && onCancel && (

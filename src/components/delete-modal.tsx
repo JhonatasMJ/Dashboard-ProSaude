@@ -4,7 +4,6 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -33,27 +32,28 @@ export function DeleteModal({
 }: DeleteModalProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="rounded-md sm:max-w-md">
-        <AlertDialogHeader className="text-left">
+      <AlertDialogContent className="flex flex-col gap-0 overflow-hidden rounded-md p-0 sm:max-w-md">
+        <AlertDialogHeader className="px-5 pt-5 pb-4 text-left">
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex w-full flex-row gap-2 *:flex-1">
+
+        <div className="flex w-full gap-2 border-t border-border bg-muted/50 px-5 py-4">
           <AlertDialogCancel
             disabled={isLoading}
-            className="h-11 w-full rounded-md"
+            className="h-9.5 min-w-0 flex-1 rounded-md"
           >
             {cancelLabel}
           </AlertDialogCancel>
           <Button
             variant="destructive"
-            className="h-11 w-full rounded-md"
+            className="h-9.5 min-w-0 flex-1 rounded-md"
             disabled={isLoading}
             onClick={onConfirm}
           >
             {isLoading ? "Excluindo..." : confirmLabel}
           </Button>
-        </AlertDialogFooter>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );

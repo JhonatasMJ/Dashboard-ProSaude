@@ -1,8 +1,7 @@
 import * as yup from "yup";
 
 export const companySchema = yup.object({
-  legalName: yup.string().required("Razão social é obrigatória"),
-  tradeName: yup.string().required("Nome fantasia é obrigatório"),
+  name: yup.string().required("Nome da empresa é obrigatório"),
   taxId: yup
     .string()
     .required("CNPJ é obrigatório")
@@ -15,5 +14,13 @@ export const companySchema = yup.object({
     .string()
     .required("Telefone é obrigatório")
     .min(14, "Telefone incompleto"),
-  address: yup.string().required("Endereço é obrigatório"),
+  zipCode: yup.string().default(""),
+  street: yup.string().required("Rua é obrigatória"),
+  number: yup.string().required("Número é obrigatório"),
+  neighborhood: yup.string().required("Bairro é obrigatório"),
+  city: yup.string().required("Cidade é obrigatória"),
+  state: yup
+    .string()
+    .required("UF é obrigatória")
+    .length(2, "Informe a sigla do estado (ex: SP)"),
 });

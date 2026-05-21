@@ -4,6 +4,7 @@ import {
   type FieldPath,
   type FieldValues,
 } from "react-hook-form";
+import type { FocusEvent } from "react";
 import { IMaskInput } from "react-imask";
 import type { FactoryOpts } from "imask";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ type MaskedInputLabelProps<T extends FieldValues> = {
   maskOptions: FactoryOpts;
   containerClassName?: string;
   placeholder?: string;
+  onBlur?: (event: FocusEvent<HTMLInputElement>) => void;
 };
 
 const inputClassName =
@@ -28,6 +30,7 @@ export function MaskedInputLabel<T extends FieldValues>({
   maskOptions,
   containerClassName,
   placeholder,
+  onBlur,
 }: MaskedInputLabelProps<T>) {
   const inputId = String(name);
 
@@ -55,7 +58,10 @@ export function MaskedInputLabel<T extends FieldValues>({
             onAccept={(_value, maskRef) => {
               field.onChange(maskRef.value);
             }}
-            onBlur={field.onBlur}
+            onBlur={(event) => {
+              field.onBlur();
+              onBlur?.(event);
+            }}
             inputRef={field.ref}
           />
           {fieldState.error?.message && (
