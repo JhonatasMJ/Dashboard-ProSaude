@@ -2,12 +2,16 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ButtonAnimatedIcon } from "@/components/button-animated-icon";
-import { ExamFormSheet } from "@/components/exams/exam-form-sheet";
+import { EmployeeExamFormSheet } from "@/components/employee-exams/employee-exam-form-sheet";
+import { EmployeeFilterSelect } from "@/components/employee-exams/employee-filter-select";
+import { ExamCatalogFilterSelect } from "@/components/employee-exams/exam-catalog-filter-select";
+import { CompanyFilterSelect } from "@/components/exams/company-filter-select";
 import { DeleteModal } from "@/components/delete-modal";
 import { Button } from "@/components/ui/button";
 import { DeleteIcon } from "@/components/ui/delete";
 import { PlusIcon } from "@/components/ui/plus";
 import { SquarePenIcon } from "@/components/ui/square-pen";
+import { DatePickerLabel } from "@/components/date-picker-label";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
@@ -20,24 +24,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
-import { useExams } from "@/hooks/use-exams";
+import { useEmployeeExams } from "@/hooks/use-employee-exams";
 import { cn } from "@/lib/utils";
-import { EXAMS_PAGE_SIZE } from "@/shared/constants/exams.constants";
+import { EMPLOYEE_EXAMS_PAGE_SIZE } from "@/shared/constants/employee-exams.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
+import { formatDateBr } from "@/shared/helpers/date.helper";
 import { formatCurrency } from "@/shared/helpers/format-currency.helper";
-import type { IExam } from "@/shared/interfaces/https/exam";
+import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
 
-function ExamsTableSkeleton() {
+function EmployeeExamsTableSkeleton() {
   return (
     <div className="divide-y divide-border">
-      {Array.from({ length: EXAMS_PAGE_SIZE }).map((_, index) => (
+      {Array.from({ length: EMPLOYEE_EXAMS_PAGE_SIZE }).map((_, index) => (
         <div
           key={index}
           className="flex animate-pulse items-center gap-4 px-5 py-4"
         >
           <div className="h-4 w-40 flex-1 rounded-md bg-muted" />
-          <div className="hidden h-4 w-32 rounded-md bg-muted md:block" />
-          <div className="hidden h-4 w-20 rounded-md bg-muted lg:block" />
+          <div className="hidden h-4 w-28 rounded-md bg-muted md:block" />
+          <div className="hidden h-4 w-32 rounded-md bg-muted lg:block" />
           <div className="h-8 w-16 rounded-md bg-muted" />
         </div>
       ))}
@@ -45,16 +50,16 @@ function ExamsTableSkeleton() {
   );
 }
 
-function ExamRow({
-  exam,
+function LinkRow({
+  link,
   rowIndex,
   onEdit,
   onDelete,
 }: {
-  exam: IExam;
+  link: IEmployeeExam;
   rowIndex: number;
-  onEdit: (exam: IExam) => void;
-  onDelete: (exam: IExam) => void;
+  onEdit: (link: IEmployeeExam) => void;
+  onDelete: (link: IEmployeeExam) => void;
 }) {
   const editIcon = useButtonAnimatedIcon();
   const deleteIcon = useButtonAnimatedIcon();
@@ -70,24 +75,38 @@ function ExamRow({
       )}
     >
       <TableCell className="px-5 py-4">
-        <p className="truncate font-medium text-foreground">{exam.name}</p>
+        <p className="truncate font-medium text-foreground">
+          {link.employee.name}
+        </p>
       </TableCell>
-      <TableCell className="hidden px-5 py-4 text-sm font-medium text-foreground md:table-cell">
-        {formatCurrency(exam.price)}
+      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground md:table-cell">
+        {link.employee.company.name}
       </TableCell>
-      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground lg:table-cell">
-        {formatCurrency(exam.cost)}
+      <TableCell className="hidden px-5 py-4 lg:table-cell">
+        <p className="truncate text-sm font-medium text-foreground">
+          {link.exam.name}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {formatCurrency(link.exam.price)}
+        </p>
+      </TableCell>
+      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground xl:table-cell">
+        {link.professionalName}
+      </TableCell>
+      <TableCell className="hidden px-5 py-4 text-sm text-foreground xl:table-cell">
+        <span className="whitespace-nowrap">
+          {formatDateBr(link.examDate)}
+          <span className="mx-1.5 text-muted-foreground">·</span>
+          {link.examTime}
+        </span>
       </TableCell>
       <TableCell
         className={cn(
           "hidden px-5 py-4 text-sm font-medium 2xl:table-cell",
-          exam.profit >= 0 ? "text-primary" : "text-destructive"
+          link.exam.profit >= 0 ? "text-primary" : "text-destructive"
         )}
       >
-        {formatCurrency(exam.profit)}
-      </TableCell>
-      <TableCell className="hidden max-w-[200px] truncate px-5 py-4 text-sm text-muted-foreground 2xl:table-cell">
-        {exam.notes || "—"}
+        {formatCurrency(link.exam.profit)}
       </TableCell>
       <TableCell className="px-5 py-4">
         <div className="flex items-center justify-end gap-2">
@@ -95,8 +114,8 @@ function ExamRow({
             variant="ghost"
             size="icon-lg"
             className="rounded-md bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
-            aria-label={`Editar ${exam.name}`}
-            onClick={() => onEdit(exam)}
+            aria-label={`Editar vínculo de ${link.employee.name}`}
+            onClick={() => onEdit(link)}
             {...editIcon.rowHandlers}
           >
             <ButtonAnimatedIcon
@@ -110,8 +129,8 @@ function ExamRow({
             variant="ghost"
             size="icon-lg"
             className="rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
-            aria-label={`Excluir ${exam.name}`}
-            onClick={() => onDelete(exam)}
+            aria-label={`Excluir vínculo de ${link.employee.name}`}
+            onClick={() => onDelete(link)}
             {...deleteIcon.rowHandlers}
           >
             <ButtonAnimatedIcon
@@ -127,58 +146,78 @@ function ExamRow({
   );
 }
 
-export function ExamsTable() {
+export function EmployeeExamsTable() {
   const {
-    exams,
+    links,
     meta,
+    companies,
+    employees,
+    exams,
     isLoading,
+    isLoadingFilters,
     error,
     refetch,
-    deleteExam,
+    deleteLink,
     isSubmitting,
-    nameFilter,
-    setNameFilter,
+    professionalNameFilter,
+    setProfessionalNameFilter,
+    companyIdFilter,
+    setCompanyIdFilter,
+    employeeIdFilter,
+    setEmployeeIdFilter,
+    examIdFilter,
+    setExamIdFilter,
+    examDateFromFilter,
+    setExamDateFromFilter,
+    examDateToFilter,
+    setExamDateToFilter,
     setPage,
-  } = useExams();
+  } = useEmployeeExams();
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editingExam, setEditingExam] = useState<IExam | null>(null);
-  const [deletingExam, setDeletingExam] = useState<IExam | null>(null);
+  const [editingLink, setEditingLink] = useState<IEmployeeExam | null>(null);
+  const [deletingLink, setDeletingLink] = useState<IEmployeeExam | null>(null);
   const plusIconHeader = useButtonAnimatedIcon();
   const plusIconEmpty = useButtonAnimatedIcon();
 
   const totalCount = meta?.total ?? 0;
-  const hasActiveFilters = nameFilter.trim().length > 0;
-  const isEmptyList = !isLoading && !error && exams.length === 0;
-  const canCreate = true;
+  const hasActiveFilters =
+    professionalNameFilter.trim().length > 0 ||
+    companyIdFilter.length > 0 ||
+    employeeIdFilter.length > 0 ||
+    examIdFilter.length > 0 ||
+    examDateFromFilter.length > 0 ||
+    examDateToFilter.length > 0;
+  const isEmptyList = !isLoading && !error && links.length === 0;
+  const canCreate = employees.length > 0 && exams.length > 0;
 
   const openCreate = () => {
-    setEditingExam(null);
+    setEditingLink(null);
     setFormOpen(true);
   };
 
-  const openEdit = (exam: IExam) => {
-    setEditingExam(exam);
+  const openEdit = (link: IEmployeeExam) => {
+    setEditingLink(link);
     setFormOpen(true);
   };
 
   const handleFormOpenChange = (open: boolean) => {
     setFormOpen(open);
     if (!open) {
-      setEditingExam(null);
+      setEditingLink(null);
     }
   };
 
   const handleDelete = async () => {
-    if (!deletingExam) return;
+    if (!deletingLink) return;
 
     try {
-      await deleteExam(deletingExam.id);
-      toast.success("Exame excluído com sucesso.");
-      setDeletingExam(null);
+      await deleteLink(deletingLink.id);
+      toast.success("Vínculo excluído com sucesso.");
+      setDeletingLink(null);
     } catch (err) {
       toast.error(
-        getApiErrorMessage(err, "Não foi possível excluir o exame.")
+        getApiErrorMessage(err, "Não foi possível excluir o vínculo.")
       );
     }
   };
@@ -189,15 +228,15 @@ export function ExamsTable() {
         <div className="flex flex-col gap-4 border-b border-border bg-muted/20 px-5 py-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="font-semibold text-foreground">Exames</h2>
+              <h2 className="font-semibold text-foreground">Vínculos</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Catálogo global de exames.
+                Funcionários vinculados a exames do catálogo.
                 {!isLoading && !error && meta && (
                   <>
                     {" "}
                     <span className="font-medium text-foreground/70">
                       · {totalCount}{" "}
-                      {totalCount === 1 ? "exame" : "exames"}
+                      {totalCount === 1 ? "vínculo" : "vínculos"}
                     </span>
                   </>
                 )}
@@ -207,7 +246,7 @@ export function ExamsTable() {
               className="shrink-0 rounded-md py-4.5"
               size="lg"
               onClick={openCreate}
-              disabled={isLoading}
+              disabled={!canCreate || isLoadingFilters}
               {...plusIconHeader.rowHandlers}
             >
               <ButtonAnimatedIcon
@@ -215,35 +254,83 @@ export function ExamsTable() {
                 iconRef={plusIconHeader.iconRef}
                 size={16}
               />
-              Novo exame
+              Novo vínculo
             </Button>
           </div>
 
-          <div className="flex flex-col gap-2.5 lg:flex-row">
-            <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+          <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+            <div className="flex min-w-0 flex-col gap-2.5 lg:col-span-2 xl:col-span-1">
               <label
-                htmlFor="exam-name-filter"
+                htmlFor="link-professional-filter"
                 className="text-sm font-medium text-foreground"
               >
-                Buscar exame
+                Profissional
               </label>
               <div className="relative">
                 <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  id="exam-name-filter"
+                  id="link-professional-filter"
                   type="search"
-                  placeholder="Nome do exame..."
-                  value={nameFilter}
-                  onChange={(e) => setNameFilter(e.target.value)}
+                  placeholder="Nome do profissional..."
+                  value={professionalNameFilter}
+                  onChange={(e) => setProfessionalNameFilter(e.target.value)}
                   className="h-11 rounded-md pl-10"
                 />
               </div>
             </div>
 
+            <CompanyFilterSelect
+              value={companyIdFilter}
+              onChange={setCompanyIdFilter}
+              companies={companies}
+              disabled={isLoadingFilters}
+            />
+
+            <EmployeeFilterSelect
+              value={employeeIdFilter}
+              onChange={setEmployeeIdFilter}
+              employees={employees}
+              disabled={isLoadingFilters}
+            />
+
+            <ExamCatalogFilterSelect
+              value={examIdFilter}
+              onChange={setExamIdFilter}
+              exams={exams}
+              disabled={isLoadingFilters}
+            />
+
+            <DatePickerLabel
+              id="link-date-from"
+              label="Data do exame (de)"
+              value={examDateFromFilter}
+              onChange={setExamDateFromFilter}
+              placeholder="Selecione a data inicial"
+              disabled={isLoadingFilters}
+            />
+
+            <DatePickerLabel
+              id="link-date-to"
+              label="Data do exame (até)"
+              value={examDateToFilter}
+              onChange={setExamDateToFilter}
+              placeholder="Selecione a data final"
+              disabled={isLoadingFilters}
+            />
           </div>
+
+          {!canCreate && !isLoadingFilters && (
+            <p className="text-sm text-amber-700">
+              {employees.length === 0 && exams.length === 0
+                ? "Cadastre funcionários e exames no catálogo antes de criar vínculos."
+                : employees.length === 0
+                  ? "Cadastre pelo menos um funcionário antes de criar vínculos."
+                  : "Cadastre pelo menos um exame no catálogo antes de criar vínculos."}
+            </p>
+          )}
         </div>
 
-        {isLoading && <ExamsTableSkeleton />}
+        {isLoading && <EmployeeExamsTableSkeleton />}
 
         {!isLoading && error && (
           <div className="flex flex-col items-center gap-3 px-5 py-12 text-center">
@@ -263,10 +350,12 @@ export function ExamsTable() {
           <div className="flex flex-col items-center gap-3 px-5 py-16 text-center">
             <div className="space-y-1">
               <p className="font-medium text-foreground">
-                Nenhum exame cadastrado
+                Nenhum vínculo cadastrado
               </p>
               <p className="max-w-sm text-sm text-muted-foreground">
-                Comece adicionando o primeiro exame ao catálogo.
+                {canCreate
+                  ? "Comece registrando o primeiro vínculo funcionário–exame."
+                  : "Cadastre funcionários e exames para poder criar vínculos."}
               </p>
             </div>
             {canCreate && (
@@ -280,7 +369,7 @@ export function ExamsTable() {
                   iconRef={plusIconEmpty.iconRef}
                   size={16}
                 />
-                Novo exame
+                Novo vínculo
               </Button>
             )}
           </div>
@@ -289,33 +378,36 @@ export function ExamsTable() {
         {isEmptyList && hasActiveFilters && (
           <div className="flex flex-col items-center gap-2 px-5 py-16 text-center">
             <p className="font-medium text-foreground">
-              Nenhum exame encontrado
+              Nenhum vínculo encontrado
             </p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Ajuste o filtro de busca e tente novamente.
+              Ajuste os filtros e tente novamente.
             </p>
           </div>
         )}
 
-        {!isLoading && !error && exams.length > 0 && (
+        {!isLoading && !error && links.length > 0 && (
           <>
             <Table>
               <TableHeader>
                 <TableRow className="border-border/80 bg-muted/40 hover:bg-muted/40">
                   <TableHead className="h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    Exame
+                    Funcionário
                   </TableHead>
                   <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase md:table-cell">
-                    Preço
+                    Empresa
                   </TableHead>
                   <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase lg:table-cell">
-                    Custo
+                    Exame
+                  </TableHead>
+                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase xl:table-cell">
+                    Profissional
+                  </TableHead>
+                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase xl:table-cell">
+                    Data / hora
                   </TableHead>
                   <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase 2xl:table-cell">
                     Lucro
-                  </TableHead>
-                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase 2xl:table-cell">
-                    Observações
                   </TableHead>
                   <TableHead className="h-11 px-5 text-right text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                     Ações
@@ -323,13 +415,13 @@ export function ExamsTable() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {exams.map((exam, index) => (
-                  <ExamRow
-                    key={exam.id}
+                {links.map((link, index) => (
+                  <LinkRow
+                    key={link.id}
                     rowIndex={index}
-                    exam={exam}
+                    link={link}
                     onEdit={openEdit}
-                    onDelete={setDeletingExam}
+                    onDelete={setDeletingLink}
                   />
                 ))}
               </TableBody>
@@ -346,22 +438,23 @@ export function ExamsTable() {
         )}
       </Card>
 
-      <ExamFormSheet
+      <EmployeeExamFormSheet
         open={formOpen}
         onOpenChange={handleFormOpenChange}
-        exam={editingExam}
+        link={editingLink}
       />
 
       <DeleteModal
-        open={!!deletingExam}
+        open={!!deletingLink}
         onOpenChange={(open) => {
-          if (!open) setDeletingExam(null);
+          if (!open) setDeletingLink(null);
         }}
-        title="Excluir exame"
+        title="Excluir vínculo"
         description={
           <>
-            Tem certeza que deseja excluir{" "}
-            <strong>{deletingExam?.name}</strong>? Esta ação não pode ser
+            Tem certeza que deseja excluir o vínculo de{" "}
+            <strong>{deletingLink?.employee.name}</strong> com o exame{" "}
+            <strong>{deletingLink?.exam.name}</strong>? Esta ação não pode ser
             desfeita.
           </>
         }

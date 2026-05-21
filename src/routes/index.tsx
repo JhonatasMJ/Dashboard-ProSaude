@@ -1,10 +1,14 @@
 import { createBrowserRouter } from "react-router-dom";
 import { CompaniesProvider } from "@/contexts/companies.context";
+import { EmployeeExamsProvider } from "@/contexts/employee-exams.context";
+import { EmployeesProvider } from "@/contexts/employees.context";
 import { ExamsProvider } from "@/contexts/exams.context";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import CompaniesPage from "@/pages/companies";
 import Dashboard from "@/pages/dashboard";
+import EmployeesPage from "@/pages/employees";
 import ExamsPage from "@/pages/exams";
+import VinculosPage from "@/pages/vinculos";
 import Login from "@/pages/login";
 import { RootLayout } from "@/routes/root-layout";
 
@@ -43,6 +47,24 @@ export const router = createBrowserRouter([
               </ExamsProvider>
             ),
             handle: { title: "Exames" },
+          },
+          {
+            path: "funcionarios",
+            element: (
+              <EmployeesProvider>
+                <EmployeesPage />
+              </EmployeesProvider>
+            ),
+            handle: { title: "Funcionários" },
+          },
+          {
+            path: "vinculos",
+            element: (
+              <EmployeeExamsProvider>
+                <VinculosPage />
+              </EmployeeExamsProvider>
+            ),
+            handle: { title: "Vínculos" },
           },
         ],
       },

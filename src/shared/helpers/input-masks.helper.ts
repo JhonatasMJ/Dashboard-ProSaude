@@ -36,3 +36,15 @@ export const phoneMask: FactoryOpts = {
 export const zipCodeMask: FactoryOpts = {
   mask: "00000-000",
 };
+
+export const cpfMask: FactoryOpts = {
+  mask: "000.000.000-00",
+};
+
+export const birthDateMask: FactoryOpts = {
+  mask: "00/00/0000",
+};
+
+export const examTimeMask: FactoryOpts = {
+  mask: "00:00",
+};

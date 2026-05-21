@@ -10,31 +10,25 @@ import {
   EXAMS_FILTER_DEBOUNCE_MS,
   EXAMS_PAGE_SIZE,
 } from "@/shared/constants/exams.constants";
-import { COMPANIES_PAGE_SIZE } from "@/shared/constants/companies.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import {
   formToExamCreatePayload,
   formToExamUpdatePayload,
 } from "@/shared/helpers/exam-form.helper";
-import type { ICompany } from "@/shared/interfaces/https/company";
 import type { IExam } from "@/shared/interfaces/https/exam";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
-import { companyService } from "@/shared/services/company.service";
 import { examService } from "@/shared/services/exam.service";
 import type { ExamFormData } from "@/types/exam-form.types";
 
 export function ExamsProvider({ children }: { children: ReactNode }) {
   const [exams, setExams] = useState<IExam[]>([]);
   const [meta, setMeta] = useState<IPaginationMeta | null>(null);
-  const [companies, setCompanies] = useState<ICompany[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [nameFilter, setNameFilter] = useState("");
   const [debouncedName, setDebouncedName] = useState("");
-  const [companyIdFilter, setCompanyIdFilter] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -44,26 +38,6 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
 
     return () => window.clearTimeout(timer);
   }, [nameFilter]);
-
-  const handleCompanyFilterChange = useCallback((value: string) => {
-    setCompanyIdFilter(value);
-    setPage(1);
-  }, []);
-
-  const fetchCompanies = useCallback(async () => {
-    setIsLoadingCompanies(true);
-    try {
-      const { data } = await companyService.list({
-        page: 1,
-        pageSize: COMPANIES_PAGE_SIZE,
-      });
-      setCompanies(data);
-    } catch {
-      setCompanies([]);
-    } finally {
-      setIsLoadingCompanies(false);
-    }
-  }, []);
 
   const fetchExams = useCallback(
     async (showLoading = false) => {
@@ -77,7 +51,6 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
           page,
           pageSize: EXAMS_PAGE_SIZE,
           ...(debouncedName ? { name: debouncedName } : {}),
-          ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
         });
         setExams(response.data);
         setMeta(response.meta);
@@ -91,12 +64,8 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [page, debouncedName, companyIdFilter]
+    [page, debouncedName]
   );
-
-  useEffect(() => {
-    fetchCompanies();
-  }, [fetchCompanies]);
 
   useEffect(() => {
     let active = true;
@@ -109,7 +78,6 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
         page,
         pageSize: EXAMS_PAGE_SIZE,
         ...(debouncedName ? { name: debouncedName } : {}),
-        ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
       })
       .then((response) => {
         if (active) {
@@ -136,7 +104,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [page, debouncedName, companyIdFilter]);
+  }, [page, debouncedName]);
 
   const createExam = useCallback(
     async (formData: ExamFormData) => {
@@ -190,16 +158,12 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     () => ({
       exams,
       meta,
-      companies,
       isLoading,
-      isLoadingCompanies,
       isSubmitting,
       error,
       nameFilter,
-      companyIdFilter,
       page,
       setNameFilter,
-      setCompanyIdFilter: handleCompanyFilterChange,
       setPage,
       refetch: () => fetchExams(true),
       createExam,
@@ -209,15 +173,11 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     [
       exams,
       meta,
-      companies,
       isLoading,
-      isLoadingCompanies,
       isSubmitting,
       error,
       nameFilter,
-      companyIdFilter,
       page,
-      handleCompanyFilterChange,
       fetchExams,
       createExam,
       updateExam,

@@ -1,0 +1,236 @@
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  EmployeesContext,
+  type EmployeesContextValue,
+} from "@/contexts/employees-context";
+import {
+  EMPLOYEES_FILTER_DEBOUNCE_MS,
+  EMPLOYEES_FILTER_OPTIONS_PAGE_SIZE,
+  EMPLOYEES_PAGE_SIZE,
+} from "@/shared/constants/employees.constants";
+import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
+import {
+  formToEmployeeCreatePayload,
+  formToEmployeeUpdatePayload,
+} from "@/shared/helpers/employee-form.helper";
+import type { ICompany } from "@/shared/interfaces/https/company";
+import type { IEmployee } from "@/shared/interfaces/https/employee";
+import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
+import { companyService } from "@/shared/services/company.service";
+import { employeeService } from "@/shared/services/employee.service";
+import type { EmployeeFormData } from "@/types/employee-form.types";
+
+export function EmployeesProvider({ children }: { children: ReactNode }) {
+  const [employees, setEmployees] = useState<IEmployee[]>([]);
+  const [meta, setMeta] = useState<IPaginationMeta | null>(null);
+  const [companies, setCompanies] = useState<ICompany[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingFilters, setIsLoadingFilters] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [nameFilter, setNameFilter] = useState("");
+  const [debouncedName, setDebouncedName] = useState("");
+  const [companyIdFilter, setCompanyIdFilter] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedName(nameFilter.trim());
+      setPage(1);
+    }, EMPLOYEES_FILTER_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [nameFilter]);
+
+  const handleCompanyFilterChange = useCallback((value: string) => {
+    setCompanyIdFilter(value);
+    setPage(1);
+  }, []);
+
+  const fetchFilterOptions = useCallback(async () => {
+    setIsLoadingFilters(true);
+    try {
+      const { data } = await companyService.list({
+        page: 1,
+        pageSize: EMPLOYEES_FILTER_OPTIONS_PAGE_SIZE,
+      });
+      setCompanies(data);
+    } catch {
+      setCompanies([]);
+    } finally {
+      setIsLoadingFilters(false);
+    }
+  }, []);
+
+  const fetchEmployees = useCallback(
+    async (showLoading = false) => {
+      if (showLoading) {
+        setIsLoading(true);
+      }
+      setError(null);
+
+      try {
+        const response = await employeeService.list({
+          page,
+          pageSize: EMPLOYEES_PAGE_SIZE,
+          ...(debouncedName ? { name: debouncedName } : {}),
+          ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
+        });
+        setEmployees(response.data);
+        setMeta(response.meta);
+      } catch (err) {
+        setEmployees([]);
+        setMeta(null);
+        setError(
+          getApiErrorMessage(err, "Não foi possível carregar os funcionários.")
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [page, debouncedName, companyIdFilter]
+  );
+
+  useEffect(() => {
+    fetchFilterOptions();
+  }, [fetchFilterOptions]);
+
+  useEffect(() => {
+    let active = true;
+
+    setIsLoading(true);
+    setError(null);
+
+    employeeService
+      .list({
+        page,
+        pageSize: EMPLOYEES_PAGE_SIZE,
+        ...(debouncedName ? { name: debouncedName } : {}),
+        ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
+      })
+      .then((response) => {
+        if (active) {
+          setEmployees(response.data);
+          setMeta(response.meta);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setEmployees([]);
+          setMeta(null);
+          setError(
+            getApiErrorMessage(err, "Não foi possível carregar os funcionários.")
+          );
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [page, debouncedName, companyIdFilter]);
+
+  const createEmployee = useCallback(
+    async (formData: EmployeeFormData) => {
+      setIsSubmitting(true);
+      try {
+        await employeeService.create(formToEmployeeCreatePayload(formData));
+        if (page === 1) {
+          await fetchEmployees();
+        } else {
+          setPage(1);
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [page, fetchEmployees]
+  );
+
+  const updateEmployee = useCallback(
+    async (id: string, formData: EmployeeFormData) => {
+      setIsSubmitting(true);
+      try {
+        await employeeService.update(id, formToEmployeeUpdatePayload(formData));
+        await fetchEmployees();
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [fetchEmployees]
+  );
+
+  const deleteEmployee = useCallback(
+    async (id: string) => {
+      setIsSubmitting(true);
+      try {
+        await employeeService.delete(id);
+        const isLastOnPage = employees.length === 1;
+        if (isLastOnPage && page > 1) {
+          setPage((current) => current - 1);
+        } else {
+          await fetchEmployees();
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [employees.length, page, fetchEmployees]
+  );
+
+  const value = useMemo<EmployeesContextValue>(
+    () => ({
+      employees,
+      meta,
+      companies,
+      isLoading,
+      isLoadingFilters,
+      isSubmitting,
+      error,
+      nameFilter,
+      companyIdFilter,
+      page,
+      setNameFilter,
+      setCompanyIdFilter: handleCompanyFilterChange,
+      setPage,
+      refetch: () => fetchEmployees(true),
+      createEmployee,
+      updateEmployee,
+      deleteEmployee,
+    }),
+    [
+      employees,
+      meta,
+      companies,
+      isLoading,
+      isLoadingFilters,
+      isSubmitting,
+      error,
+      nameFilter,
+      companyIdFilter,
+      page,
+      handleCompanyFilterChange,
+      fetchEmployees,
+      createEmployee,
+      updateEmployee,
+      deleteEmployee,
+    ]
+  );
+
+  return (
+    <EmployeesContext.Provider value={value}>
+      {children}
+    </EmployeesContext.Provider>
+  );
+}

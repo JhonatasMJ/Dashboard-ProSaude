@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { ExamForm } from "@/components/Forms/exam-form";
+import { EmployeeForm } from "@/components/Forms/employee-form";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -9,31 +9,36 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useExams } from "@/hooks/use-exams";
+import { useEmployees } from "@/hooks/use-employees";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
-import type { IExam } from "@/shared/interfaces/https/exam";
-import type { ExamFormData } from "@/types/exam-form.types";
+import type { IEmployee } from "@/shared/interfaces/https/employee";
+import type { EmployeeFormData } from "@/types/employee-form.types";
 
-const EXAM_FORM_ID = "exam-form";
+const EMPLOYEE_FORM_ID = "employee-form";
 
-interface ExamFormSheetProps {
+interface EmployeeFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  exam?: IExam | null;
+  employee?: IEmployee | null;
 }
 
-export function ExamFormSheet({ open, onOpenChange, exam }: ExamFormSheetProps) {
-  const { createExam, updateExam, isSubmitting } = useExams();
-  const isEditing = !!exam;
+export function EmployeeFormSheet({
+  open,
+  onOpenChange,
+  employee,
+}: EmployeeFormSheetProps) {
+  const { createEmployee, updateEmployee, isSubmitting, companies } =
+    useEmployees();
+  const isEditing = !!employee;
 
-  const handleSubmit = async (data: ExamFormData) => {
+  const handleSubmit = async (data: EmployeeFormData) => {
     try {
-      if (isEditing && exam) {
-        await updateExam(exam.id, data);
-        toast.success("Exame atualizado com sucesso.");
+      if (isEditing && employee) {
+        await updateEmployee(employee.id, data);
+        toast.success("Funcionário atualizado com sucesso.");
       } else {
-        await createExam(data);
-        toast.success("Exame cadastrado com sucesso.");
+        await createEmployee(data);
+        toast.success("Funcionário cadastrado com sucesso.");
       }
       onOpenChange(false);
     } catch (error) {
@@ -41,8 +46,8 @@ export function ExamFormSheet({ open, onOpenChange, exam }: ExamFormSheetProps) 
         getApiErrorMessage(
           error,
           isEditing
-            ? "Não foi possível atualizar o exame."
-            : "Não foi possível cadastrar o exame."
+            ? "Não foi possível atualizar o funcionário."
+            : "Não foi possível cadastrar o funcionário."
         )
       );
     }
@@ -57,23 +62,26 @@ export function ExamFormSheet({ open, onOpenChange, exam }: ExamFormSheetProps) 
       >
         <SheetHeader className="shrink-0 space-y-1.5 border-b border-border px-6 py-5 text-left">
           <SheetTitle className="text-xl font-semibold tracking-tight">
-            {isEditing ? "Editar exame" : "Novo exame"}
+            {isEditing ? "Editar funcionário" : "Novo funcionário"}
           </SheetTitle>
           <SheetDescription className="text-sm leading-relaxed">
             {isEditing
-              ? "Atualize nome, preço, custo e observações do exame."
-              : "Cadastre um exame no catálogo global."}
+              ? "Atualize os dados do funcionário."
+              : "Cadastre um funcionário vinculado a uma empresa."}
           </SheetDescription>
         </SheetHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-          <ExamForm
-            key={exam?.id ?? "new"}
-            formId={EXAM_FORM_ID}
+          <EmployeeForm
+            key={employee?.id ?? "new"}
+            formId={EMPLOYEE_FORM_ID}
             variant="sheet"
-            defaultValues={exam ?? undefined}
+            defaultValues={employee ?? undefined}
+            companies={companies}
             isSubmitting={isSubmitting}
-            submitLabel={isEditing ? "Salvar alterações" : "Cadastrar exame"}
+            submitLabel={
+              isEditing ? "Salvar alterações" : "Cadastrar funcionário"
+            }
             onSubmit={handleSubmit}
           />
         </div>
@@ -81,15 +89,15 @@ export function ExamFormSheet({ open, onOpenChange, exam }: ExamFormSheetProps) 
         <SheetFooter className="shrink-0 gap-2 border-t border-border bg-muted/30 px-6 py-4">
           <Button
             type="submit"
-            form={EXAM_FORM_ID}
+            form={EMPLOYEE_FORM_ID}
             className="h-11 w-full rounded-md"
-            disabled={isSubmitting}
+            disabled={isSubmitting || companies.length === 0}
           >
             {isSubmitting
               ? "Salvando..."
               : isEditing
                 ? "Salvar alterações"
-                : "Cadastrar exame"}
+                : "Cadastrar funcionário"}
           </Button>
           <Button
             type="button"

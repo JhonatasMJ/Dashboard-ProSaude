@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { ExamForm } from "@/components/Forms/exam-form";
+import { EmployeeExamForm } from "@/components/Forms/employee-exam-form";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -9,31 +9,41 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useExams } from "@/hooks/use-exams";
+import { useEmployeeExams } from "@/hooks/use-employee-exams";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
-import type { IExam } from "@/shared/interfaces/https/exam";
-import type { ExamFormData } from "@/types/exam-form.types";
+import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
+import type { EmployeeExamFormData } from "@/types/employee-exam-form.types";
 
-const EXAM_FORM_ID = "exam-form";
+const EMPLOYEE_EXAM_FORM_ID = "employee-exam-form";
 
-interface ExamFormSheetProps {
+interface EmployeeExamFormSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  exam?: IExam | null;
+  link?: IEmployeeExam | null;
 }
 
-export function ExamFormSheet({ open, onOpenChange, exam }: ExamFormSheetProps) {
-  const { createExam, updateExam, isSubmitting } = useExams();
-  const isEditing = !!exam;
+export function EmployeeExamFormSheet({
+  open,
+  onOpenChange,
+  link,
+}: EmployeeExamFormSheetProps) {
+  const {
+    createLink,
+    updateLink,
+    isSubmitting,
+    employees,
+    exams,
+  } = useEmployeeExams();
+  const isEditing = !!link;
 
-  const handleSubmit = async (data: ExamFormData) => {
+  const handleSubmit = async (data: EmployeeExamFormData) => {
     try {
-      if (isEditing && exam) {
-        await updateExam(exam.id, data);
-        toast.success("Exame atualizado com sucesso.");
+      if (isEditing && link) {
+        await updateLink(link.id, data);
+        toast.success("Vínculo atualizado com sucesso.");
       } else {
-        await createExam(data);
-        toast.success("Exame cadastrado com sucesso.");
+        await createLink(data);
+        toast.success("Vínculo cadastrado com sucesso.");
       }
       onOpenChange(false);
     } catch (error) {
@@ -41,12 +51,14 @@ export function ExamFormSheet({ open, onOpenChange, exam }: ExamFormSheetProps) 
         getApiErrorMessage(
           error,
           isEditing
-            ? "Não foi possível atualizar o exame."
-            : "Não foi possível cadastrar o exame."
+            ? "Não foi possível atualizar o vínculo."
+            : "Não foi possível cadastrar o vínculo."
         )
       );
     }
   };
+
+  const canSubmit = employees.length > 0 && exams.length > 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -57,23 +69,25 @@ export function ExamFormSheet({ open, onOpenChange, exam }: ExamFormSheetProps) 
       >
         <SheetHeader className="shrink-0 space-y-1.5 border-b border-border px-6 py-5 text-left">
           <SheetTitle className="text-xl font-semibold tracking-tight">
-            {isEditing ? "Editar exame" : "Novo exame"}
+            {isEditing ? "Editar vínculo" : "Novo vínculo"}
           </SheetTitle>
           <SheetDescription className="text-sm leading-relaxed">
             {isEditing
-              ? "Atualize nome, preço, custo e observações do exame."
-              : "Cadastre um exame no catálogo global."}
+              ? "Atualize funcionário, exame, profissional e data/hora."
+              : "Vincule um funcionário a um exame do catálogo."}
           </SheetDescription>
         </SheetHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-          <ExamForm
-            key={exam?.id ?? "new"}
-            formId={EXAM_FORM_ID}
+          <EmployeeExamForm
+            key={link?.id ?? "new"}
+            formId={EMPLOYEE_EXAM_FORM_ID}
             variant="sheet"
-            defaultValues={exam ?? undefined}
+            defaultValues={link ?? undefined}
+            employees={employees}
+            exams={exams}
             isSubmitting={isSubmitting}
-            submitLabel={isEditing ? "Salvar alterações" : "Cadastrar exame"}
+            submitLabel={isEditing ? "Salvar alterações" : "Cadastrar vínculo"}
             onSubmit={handleSubmit}
           />
         </div>
@@ -81,15 +95,15 @@ export function ExamFormSheet({ open, onOpenChange, exam }: ExamFormSheetProps) 
         <SheetFooter className="shrink-0 gap-2 border-t border-border bg-muted/30 px-6 py-4">
           <Button
             type="submit"
-            form={EXAM_FORM_ID}
+            form={EMPLOYEE_EXAM_FORM_ID}
             className="h-11 w-full rounded-md"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !canSubmit}
           >
             {isSubmitting
               ? "Salvando..."
               : isEditing
                 ? "Salvar alterações"
-                : "Cadastrar exame"}
+                : "Cadastrar vínculo"}
           </Button>
           <Button
             type="button"

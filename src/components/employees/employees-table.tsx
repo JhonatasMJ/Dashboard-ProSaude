@@ -2,7 +2,8 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ButtonAnimatedIcon } from "@/components/button-animated-icon";
-import { ExamFormSheet } from "@/components/exams/exam-form-sheet";
+import { CompanyFilterSelect } from "@/components/exams/company-filter-select";
+import { EmployeeFormSheet } from "@/components/employees/employee-form-sheet";
 import { DeleteModal } from "@/components/delete-modal";
 import { Button } from "@/components/ui/button";
 import { DeleteIcon } from "@/components/ui/delete";
@@ -20,24 +21,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
-import { useExams } from "@/hooks/use-exams";
+import { useEmployees } from "@/hooks/use-employees";
 import { cn } from "@/lib/utils";
-import { EXAMS_PAGE_SIZE } from "@/shared/constants/exams.constants";
+import { EMPLOYEES_PAGE_SIZE } from "@/shared/constants/employees.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
-import { formatCurrency } from "@/shared/helpers/format-currency.helper";
-import type { IExam } from "@/shared/interfaces/https/exam";
+import { formatCpf } from "@/shared/helpers/cpf.helper";
+import { formatAgeFromBirthDate, formatDateBr } from "@/shared/helpers/date.helper";
+import type { IEmployee } from "@/shared/interfaces/https/employee";
 
-function ExamsTableSkeleton() {
+function EmployeesTableSkeleton() {
   return (
     <div className="divide-y divide-border">
-      {Array.from({ length: EXAMS_PAGE_SIZE }).map((_, index) => (
+      {Array.from({ length: EMPLOYEES_PAGE_SIZE }).map((_, index) => (
         <div
           key={index}
           className="flex animate-pulse items-center gap-4 px-5 py-4"
         >
           <div className="h-4 w-40 flex-1 rounded-md bg-muted" />
-          <div className="hidden h-4 w-32 rounded-md bg-muted md:block" />
-          <div className="hidden h-4 w-20 rounded-md bg-muted lg:block" />
+          <div className="hidden h-4 w-28 rounded-md bg-muted md:block" />
+          <div className="hidden h-4 w-32 rounded-md bg-muted lg:block" />
           <div className="h-8 w-16 rounded-md bg-muted" />
         </div>
       ))}
@@ -45,20 +47,21 @@ function ExamsTableSkeleton() {
   );
 }
 
-function ExamRow({
-  exam,
+function EmployeeRow({
+  employee,
   rowIndex,
   onEdit,
   onDelete,
 }: {
-  exam: IExam;
+  employee: IEmployee;
   rowIndex: number;
-  onEdit: (exam: IExam) => void;
-  onDelete: (exam: IExam) => void;
+  onEdit: (employee: IEmployee) => void;
+  onDelete: (employee: IEmployee) => void;
 }) {
   const editIcon = useButtonAnimatedIcon();
   const deleteIcon = useButtonAnimatedIcon();
   const isEven = rowIndex % 2 === 0;
+  const ageLabel = formatAgeFromBirthDate(employee.birthDate);
 
   return (
     <TableRow
@@ -70,24 +73,34 @@ function ExamRow({
       )}
     >
       <TableCell className="px-5 py-4">
-        <p className="truncate font-medium text-foreground">{exam.name}</p>
+        <span
+          className={cn(
+            "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
+            employee.active
+              ? "bg-primary/10 text-primary"
+              : "bg-destructive/10 text-destructive"
+          )}
+        >
+          {employee.active ? "Ativo" : "Inativo"}
+        </span>
       </TableCell>
-      <TableCell className="hidden px-5 py-4 text-sm font-medium text-foreground md:table-cell">
-        {formatCurrency(exam.price)}
+      <TableCell className="px-5 py-4">
+        <p className="truncate font-medium text-foreground">{employee.name}</p>
+      </TableCell>
+      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground md:table-cell">
+        {formatCpf(employee.documentNumber)}
       </TableCell>
       <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground lg:table-cell">
-        {formatCurrency(exam.cost)}
+        {employee.company.name}
       </TableCell>
-      <TableCell
-        className={cn(
-          "hidden px-5 py-4 text-sm font-medium 2xl:table-cell",
-          exam.profit >= 0 ? "text-primary" : "text-destructive"
-        )}
-      >
-        {formatCurrency(exam.profit)}
+      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground xl:table-cell">
+        {employee.jobTitle || "—"}
       </TableCell>
-      <TableCell className="hidden max-w-[200px] truncate px-5 py-4 text-sm text-muted-foreground 2xl:table-cell">
-        {exam.notes || "—"}
+      <TableCell className="hidden px-5 py-4 text-sm text-foreground 2xl:table-cell">
+        {formatDateBr(employee.birthDate)}
+      </TableCell>
+      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground 2xl:table-cell">
+        {ageLabel ?? "—"}
       </TableCell>
       <TableCell className="px-5 py-4">
         <div className="flex items-center justify-end gap-2">
@@ -95,8 +108,8 @@ function ExamRow({
             variant="ghost"
             size="icon-lg"
             className="rounded-md bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
-            aria-label={`Editar ${exam.name}`}
-            onClick={() => onEdit(exam)}
+            aria-label={`Editar ${employee.name}`}
+            onClick={() => onEdit(employee)}
             {...editIcon.rowHandlers}
           >
             <ButtonAnimatedIcon
@@ -110,8 +123,8 @@ function ExamRow({
             variant="ghost"
             size="icon-lg"
             className="rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
-            aria-label={`Excluir ${exam.name}`}
-            onClick={() => onDelete(exam)}
+            aria-label={`Excluir ${employee.name}`}
+            onClick={() => onDelete(employee)}
             {...deleteIcon.rowHandlers}
           >
             <ButtonAnimatedIcon
@@ -127,58 +140,65 @@ function ExamRow({
   );
 }
 
-export function ExamsTable() {
+export function EmployeesTable() {
   const {
-    exams,
+    employees,
     meta,
+    companies,
     isLoading,
+    isLoadingFilters,
     error,
     refetch,
-    deleteExam,
+    deleteEmployee,
     isSubmitting,
+    companyIdFilter,
+    setCompanyIdFilter,
     nameFilter,
     setNameFilter,
     setPage,
-  } = useExams();
+  } = useEmployees();
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editingExam, setEditingExam] = useState<IExam | null>(null);
-  const [deletingExam, setDeletingExam] = useState<IExam | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState<IEmployee | null>(null);
+  const [deletingEmployee, setDeletingEmployee] = useState<IEmployee | null>(
+    null
+  );
   const plusIconHeader = useButtonAnimatedIcon();
   const plusIconEmpty = useButtonAnimatedIcon();
 
   const totalCount = meta?.total ?? 0;
-  const hasActiveFilters = nameFilter.trim().length > 0;
-  const isEmptyList = !isLoading && !error && exams.length === 0;
-  const canCreate = true;
+  const hasActiveFilters =
+    nameFilter.trim().length > 0 || companyIdFilter.length > 0;
+  const isEmptyList = !isLoading && !error && employees.length === 0;
+  const canCreate = companies.length > 0;
 
   const openCreate = () => {
-    setEditingExam(null);
+    setEditingEmployee(null);
     setFormOpen(true);
   };
 
-  const openEdit = (exam: IExam) => {
-    setEditingExam(exam);
+  const openEdit = (employee: IEmployee) => {
+    setEditingEmployee(employee);
     setFormOpen(true);
   };
 
   const handleFormOpenChange = (open: boolean) => {
     setFormOpen(open);
     if (!open) {
-      setEditingExam(null);
+      setEditingEmployee(null);
     }
   };
 
   const handleDelete = async () => {
-    if (!deletingExam) return;
+    if (!deletingEmployee) return;
 
     try {
-      await deleteExam(deletingExam.id);
-      toast.success("Exame excluído com sucesso.");
-      setDeletingExam(null);
+      await deleteEmployee(deletingEmployee.id);
+      toast.success("Funcionário excluído com sucesso.");
+      setDeletingEmployee(null);
     } catch (err) {
       toast.error(
-        getApiErrorMessage(err, "Não foi possível excluir o exame.")
+        getApiErrorMessage(err, "Não foi possível excluir o funcionário.")
       );
     }
   };
@@ -189,15 +209,15 @@ export function ExamsTable() {
         <div className="flex flex-col gap-4 border-b border-border bg-muted/20 px-5 py-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="font-semibold text-foreground">Exames</h2>
+              <h2 className="font-semibold text-foreground">Funcionários</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Catálogo global de exames.
+                Cadastro de funcionários por empresa.
                 {!isLoading && !error && meta && (
                   <>
                     {" "}
                     <span className="font-medium text-foreground/70">
                       · {totalCount}{" "}
-                      {totalCount === 1 ? "exame" : "exames"}
+                      {totalCount === 1 ? "funcionário" : "funcionários"}
                     </span>
                   </>
                 )}
@@ -207,7 +227,7 @@ export function ExamsTable() {
               className="shrink-0 rounded-md py-4.5"
               size="lg"
               onClick={openCreate}
-              disabled={isLoading}
+              disabled={!canCreate || isLoadingFilters}
               {...plusIconHeader.rowHandlers}
             >
               <ButtonAnimatedIcon
@@ -215,24 +235,24 @@ export function ExamsTable() {
                 iconRef={plusIconHeader.iconRef}
                 size={16}
               />
-              Novo exame
+              Novo funcionário
             </Button>
           </div>
 
-          <div className="flex flex-col gap-2.5 lg:flex-row">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
             <div className="flex min-w-0 flex-1 flex-col gap-2.5">
               <label
-                htmlFor="exam-name-filter"
+                htmlFor="employee-name-filter"
                 className="text-sm font-medium text-foreground"
               >
-                Buscar exame
+                Buscar funcionário
               </label>
               <div className="relative">
                 <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  id="exam-name-filter"
+                  id="employee-name-filter"
                   type="search"
-                  placeholder="Nome do exame..."
+                  placeholder="Nome do funcionário..."
                   value={nameFilter}
                   onChange={(e) => setNameFilter(e.target.value)}
                   className="h-11 rounded-md pl-10"
@@ -240,10 +260,24 @@ export function ExamsTable() {
               </div>
             </div>
 
+            <CompanyFilterSelect
+              value={companyIdFilter}
+              onChange={setCompanyIdFilter}
+              companies={companies}
+              disabled={isLoadingFilters}
+              className="w-full lg:w-64 lg:shrink-0"
+            />
+
           </div>
+
+          {!canCreate && !isLoadingFilters && (
+            <p className="text-sm text-amber-700">
+              Cadastre pelo menos uma empresa antes de adicionar funcionários.
+            </p>
+          )}
         </div>
 
-        {isLoading && <ExamsTableSkeleton />}
+        {isLoading && <EmployeesTableSkeleton />}
 
         {!isLoading && error && (
           <div className="flex flex-col items-center gap-3 px-5 py-12 text-center">
@@ -263,10 +297,12 @@ export function ExamsTable() {
           <div className="flex flex-col items-center gap-3 px-5 py-16 text-center">
             <div className="space-y-1">
               <p className="font-medium text-foreground">
-                Nenhum exame cadastrado
+                Nenhum funcionário cadastrado
               </p>
               <p className="max-w-sm text-sm text-muted-foreground">
-                Comece adicionando o primeiro exame ao catálogo.
+                {canCreate
+                  ? "Comece adicionando o primeiro funcionário."
+                  : "Cadastre uma empresa para poder adicionar funcionários."}
               </p>
             </div>
             {canCreate && (
@@ -280,7 +316,7 @@ export function ExamsTable() {
                   iconRef={plusIconEmpty.iconRef}
                   size={16}
                 />
-                Novo exame
+                Novo funcionário
               </Button>
             )}
           </div>
@@ -289,33 +325,39 @@ export function ExamsTable() {
         {isEmptyList && hasActiveFilters && (
           <div className="flex flex-col items-center gap-2 px-5 py-16 text-center">
             <p className="font-medium text-foreground">
-              Nenhum exame encontrado
+              Nenhum funcionário encontrado
             </p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Ajuste o filtro de busca e tente novamente.
+              Ajuste os filtros de busca ou empresa e tente novamente.
             </p>
           </div>
         )}
 
-        {!isLoading && !error && exams.length > 0 && (
+        {!isLoading && !error && employees.length > 0 && (
           <>
             <Table>
               <TableHeader>
                 <TableRow className="border-border/80 bg-muted/40 hover:bg-muted/40">
                   <TableHead className="h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    Exame
+                    Status
+                  </TableHead>
+                  <TableHead className="h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                    Nome
                   </TableHead>
                   <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase md:table-cell">
-                    Preço
+                    CPF
                   </TableHead>
                   <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase lg:table-cell">
-                    Custo
+                    Empresa
+                  </TableHead>
+                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase xl:table-cell">
+                    Cargo
                   </TableHead>
                   <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase 2xl:table-cell">
-                    Lucro
+                    Nascimento
                   </TableHead>
                   <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase 2xl:table-cell">
-                    Observações
+                    Idade
                   </TableHead>
                   <TableHead className="h-11 px-5 text-right text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                     Ações
@@ -323,13 +365,13 @@ export function ExamsTable() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {exams.map((exam, index) => (
-                  <ExamRow
-                    key={exam.id}
+                {employees.map((employee, index) => (
+                  <EmployeeRow
+                    key={employee.id}
                     rowIndex={index}
-                    exam={exam}
+                    employee={employee}
                     onEdit={openEdit}
-                    onDelete={setDeletingExam}
+                    onDelete={setDeletingEmployee}
                   />
                 ))}
               </TableBody>
@@ -346,22 +388,22 @@ export function ExamsTable() {
         )}
       </Card>
 
-      <ExamFormSheet
+      <EmployeeFormSheet
         open={formOpen}
         onOpenChange={handleFormOpenChange}
-        exam={editingExam}
+        employee={editingEmployee}
       />
 
       <DeleteModal
-        open={!!deletingExam}
+        open={!!deletingEmployee}
         onOpenChange={(open) => {
-          if (!open) setDeletingExam(null);
+          if (!open) setDeletingEmployee(null);
         }}
-        title="Excluir exame"
+        title="Excluir funcionário"
         description={
           <>
             Tem certeza que deseja excluir{" "}
-            <strong>{deletingExam?.name}</strong>? Esta ação não pode ser
+            <strong>{deletingEmployee?.name}</strong>? Esta ação não pode ser
             desfeita.
           </>
         }

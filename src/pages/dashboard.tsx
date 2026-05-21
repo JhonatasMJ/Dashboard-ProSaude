@@ -8,7 +8,7 @@ export default function Dashboard() {
           Dashboard
           <span className="text-primary">.</span>
         </h1>
-        <p className="max-w-xl text-muted-foreground">
+        <p className=" text-muted-foreground">
           Visão geral dos totais de empresas, funcionários e exames cadastrados
           na plataforma.
         </p>
