@@ -20,7 +20,7 @@ export function SidebarNavItem({ item }: SidebarNavItemProps) {
       {...rowHandlers}
       className={({ isActive }) =>
         cn(
-          "group/nav flex items-center gap-2 rounded-lg px-1.5 py-1.5 text-sm font-medium transition-colors",
+                "group/nav flex items-center gap-2 rounded-md px-1.5 py-1.5 text-sm font-medium transition-colors",
           isActive
             ? "bg-primary/10 text-primary"
             : "text-foreground hover:bg-primary/5"

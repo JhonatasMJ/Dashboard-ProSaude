@@ -1,5 +1,6 @@
 import type { ComponentType, HTMLAttributes, RefAttributes } from "react";
 import type { AnimatedIconHandle } from "@/components/layout/sidebar-animated-icon";
+import { FileTextIcon } from "@/components/ui/file-text";
 import { HomeIcon } from "@/components/ui/home";
 
 export type AnimatedIcon = ComponentType<
@@ -20,5 +21,10 @@ export const dashboardNavItems: NavItem[] = [
     href: "/dashboard",
     icon: HomeIcon,
     end: true,
+  },
+  {
+    title: "Empresas",
+    href: "/dashboard/empresas",
+    icon: FileTextIcon,
   },
 ];

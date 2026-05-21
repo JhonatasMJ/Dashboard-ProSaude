@@ -17,7 +17,7 @@ export function SidebarIconBox({
   return (
     <span
       className={cn(
-        "flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors",
+        "flex size-8 shrink-0 items-center justify-center rounded-md transition-colors",
         active
           ? "text-primary"
           : "text-muted-foreground group-hover/nav:text-primary/80",

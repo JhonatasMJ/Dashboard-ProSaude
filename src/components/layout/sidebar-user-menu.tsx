@@ -31,11 +31,11 @@ export function SidebarUserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "group/nav flex w-full items-center gap-2 rounded-lg px-1.5 py-1.5 text-left outline-none",
+          "group/nav flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left outline-none",
           "transition-colors hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary/30"
         )}
       >
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-xs font-semibold text-primary">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/15 text-xs font-semibold text-primary">
           {getUserInitials(user.name)}
         </span>
         <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
