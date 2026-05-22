@@ -9,15 +9,16 @@ import {
   CompaniesContext,
   type CompaniesContextValue,
 } from "@/contexts/companies-context";
-import { COMPANIES_PAGE_SIZE } from "@/shared/constants/companies.constants";
+import {
+  FILTER_DEBOUNCE_MS,
+  TABLE_PAGE_SIZE,
+} from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formToCompanyPayload } from "@/shared/helpers/company-form.helper";
 import type { ICompany } from "@/shared/interfaces/https/company";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import { companyService } from "@/shared/services/company.service";
 import type { CompanyFormData } from "@/types/company-form.types";
-
-const NAME_FILTER_DEBOUNCE_MS = 400;
 
 export function CompaniesProvider({ children }: { children: ReactNode }) {
   const [companies, setCompanies] = useState<ICompany[]>([]);
@@ -33,7 +34,7 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => {
       setDebouncedName(nameFilter.trim());
       setPage(1);
-    }, NAME_FILTER_DEBOUNCE_MS);
+    }, FILTER_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
   }, [nameFilter]);
@@ -48,7 +49,7 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
       try {
         const response = await companyService.list({
           page,
-          pageSize: COMPANIES_PAGE_SIZE,
+          pageSize: TABLE_PAGE_SIZE,
           ...(debouncedName ? { name: debouncedName } : {}),
         });
         setCompanies(response.data);
@@ -75,7 +76,7 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
     companyService
       .list({
         page,
-        pageSize: COMPANIES_PAGE_SIZE,
+        pageSize: TABLE_PAGE_SIZE,
         ...(debouncedName ? { name: debouncedName } : {}),
       })
       .then((response) => {

@@ -10,10 +10,10 @@ import {
   type EmployeesContextValue,
 } from "@/contexts/employees-context";
 import {
-  EMPLOYEES_FILTER_DEBOUNCE_MS,
-  EMPLOYEES_FILTER_OPTIONS_PAGE_SIZE,
-  EMPLOYEES_PAGE_SIZE,
-} from "@/shared/constants/employees.constants";
+  BULK_LIST_PAGE_SIZE,
+  FILTER_DEBOUNCE_MS,
+  TABLE_PAGE_SIZE,
+} from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import {
   formToEmployeeCreatePayload,
@@ -43,7 +43,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => {
       setDebouncedName(nameFilter.trim());
       setPage(1);
-    }, EMPLOYEES_FILTER_DEBOUNCE_MS);
+    }, FILTER_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
   }, [nameFilter]);
@@ -58,7 +58,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
     try {
       const { data } = await companyService.list({
         page: 1,
-        pageSize: EMPLOYEES_FILTER_OPTIONS_PAGE_SIZE,
+        pageSize: BULK_LIST_PAGE_SIZE,
       });
       setCompanies(data);
     } catch {
@@ -78,7 +78,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
       try {
         const response = await employeeService.list({
           page,
-          pageSize: EMPLOYEES_PAGE_SIZE,
+          pageSize: TABLE_PAGE_SIZE,
           ...(debouncedName ? { name: debouncedName } : {}),
           ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
         });
@@ -110,7 +110,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
     employeeService
       .list({
         page,
-        pageSize: EMPLOYEES_PAGE_SIZE,
+        pageSize: TABLE_PAGE_SIZE,
         ...(debouncedName ? { name: debouncedName } : {}),
         ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
       })

@@ -4,32 +4,97 @@ export interface IDashboardSummaryTotals {
   employeesActive: number;
   employeesInactive: number;
   exams: number;
+  employeeExams: number;
   users: number;
+  employeesWithoutExam: number;
+  upcomingExamsNext7Days: number;
+  employeeExamsThisMonth: number;
 }
 
-export interface IDashboardSummaryExamsByType {
-  type: string;
-  count: number;
+export interface IDashboardFinancialAveragePerExam {
+  revenue: number;
+  cost: number;
+  profit: number;
 }
 
-export interface IDashboardSummaryExams {
-  byType: IDashboardSummaryExamsByType[];
-  last30Days: number;
-  expiringWithin30Days: number;
-  expired: number;
+export interface IDashboardFinancialPeriod {
+  revenue: number;
+  cost: number;
+  profit: number;
+  marginPercent: number;
+  employeeExamCount: number;
+  averagePerExam: IDashboardFinancialAveragePerExam;
 }
 
-export interface IDashboardTopCompany {
+export interface IDashboardExamCatalogFinancial {
+  examCount: number;
+  averagePrice: number;
+  averageCost: number;
+  totalCatalogPrice: number;
+  totalCatalogCost: number;
+  averageProfitPerExam: number;
+}
+
+export interface IDashboardFinancial {
+  allTime: IDashboardFinancialPeriod;
+  thisMonth: IDashboardFinancialPeriod;
+  examCatalog: IDashboardExamCatalogFinancial;
+}
+
+export interface IDashboardTopCompanyByEmployees {
   companyId: string;
-  legalName: string;
-  tradeName: string;
+  name: string;
   employeeCount: number;
+}
+
+export interface IDashboardTopCompanyByEmployeeExams {
+  companyId: string;
+  name: string;
+  employeeExamCount: number;
+}
+
+export interface IDashboardTopCompanyByRevenue {
+  companyId: string;
+  name: string;
+  employeeExamCount: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  marginPercent: number;
+  averageProfitPerExam: number;
+}
+
+export interface IDashboardTopExamByVolume {
+  examId: string;
+  name: string;
+  employeeExamCount: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  marginPercent: number;
+}
+
+export interface IDashboardRecentEmployeeExam {
+  id: string;
+  professionalName: string;
+  examDate: string;
+  examTime: string;
+  employee: { id: string; name: string };
+  company: { id: string; name: string };
+  exam: { id: string; name: string };
+  revenue: number;
+  cost: number;
+  profit: number;
 }
 
 export interface IDashboardSummaryData {
   totals: IDashboardSummaryTotals;
-  exams: IDashboardSummaryExams;
-  topCompaniesByEmployees: IDashboardTopCompany[];
+  financial: IDashboardFinancial;
+  topCompaniesByEmployees: IDashboardTopCompanyByEmployees[];
+  topCompaniesByEmployeeExams: IDashboardTopCompanyByEmployeeExams[];
+  topCompaniesByRevenue: IDashboardTopCompanyByRevenue[];
+  topExamsByVolume: IDashboardTopExamByVolume[];
+  recentEmployeeExams: IDashboardRecentEmployeeExam[];
   generatedAt: string;
 }
 

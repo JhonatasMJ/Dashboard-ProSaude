@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useExams } from "@/hooks/use-exams";
+import { useExams } from "@/contexts/exams-context";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import type { IExam } from "@/shared/interfaces/https/exam";
 import type { ExamFormData } from "@/types/exam-form.types";

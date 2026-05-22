@@ -10,6 +10,8 @@ interface SummaryStatCardProps {
   description: string;
   value: number;
   icon: ComponentType<{ className?: string }>;
+  valueFormatter?: (value: number) => string;
+  variant?: "default" | "alert";
 }
 
 export function SummaryStatCard({
@@ -17,26 +19,42 @@ export function SummaryStatCard({
   description,
   value,
   icon: Icon,
+  valueFormatter = formatTotal,
+  variant = "default",
 }: SummaryStatCardProps) {
+  const isAlert = variant === "alert";
+
   return (
     <Card
       className={cn(
-        "gap-0 rounded-md border border-border bg-white py-0 shadow-none ring-0",
-        "transition-shadow hover:shadow-sm"
+        "gap-0 rounded-md border bg-white py-0 shadow-none ring-0 transition-shadow hover:shadow-sm",
+        isAlert ? "border-amber-200/80 bg-amber-50/40" : "border-border"
       )}
     >
-      <div className="flex flex-col gap-6 p-5">
+      <div className="flex flex-col gap-5 p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 space-y-1">
             <p className="font-semibold leading-snug text-foreground">{title}</p>
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <span
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-md",
+              isAlert
+                ? "bg-amber-100 text-amber-700"
+                : "bg-primary/10 text-primary"
+            )}
+          >
             <Icon className="size-5" />
           </span>
         </div>
-        <p className="text-3xl font-bold tracking-tight text-foreground">
-          {formatTotal(value)}
+        <p
+          className={cn(
+            "text-2xl font-bold tracking-tight sm:text-3xl",
+            isAlert ? "text-amber-800" : "text-foreground"
+          )}
+        >
+          {valueFormatter(value)}
         </p>
       </div>
     </Card>
@@ -46,7 +64,7 @@ export function SummaryStatCard({
 export function SummaryStatCardSkeleton() {
   return (
     <Card className="gap-0 rounded-md border border-border bg-white py-0 shadow-none ring-0">
-      <div className="flex animate-pulse flex-col gap-6 p-5">
+      <div className="flex animate-pulse flex-col gap-5 p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-2">
             <div className="h-4 w-32 rounded-md bg-muted" />
@@ -54,7 +72,7 @@ export function SummaryStatCardSkeleton() {
           </div>
           <div className="size-10 rounded-md bg-muted" />
         </div>
-        <div className="h-9 w-20 rounded-md bg-muted" />
+        <div className="h-9 w-28 rounded-md bg-muted" />
       </div>
     </Card>
   );

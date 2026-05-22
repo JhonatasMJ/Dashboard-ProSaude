@@ -25,14 +25,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
-import { useEmployeeExams } from "@/hooks/use-employee-exams";
+import { useEmployeeExams } from "@/contexts/employee-exams-context";
 import {
   buildEmployeeExamsFilterSummary,
   fetchEmployeeExamsForReport,
   generateEmployeeExamsReportPdf,
 } from "@/pdf";
 import { cn } from "@/lib/utils";
-import { EMPLOYEE_EXAMS_PAGE_SIZE } from "@/shared/constants/employee-exams.constants";
+import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatDateBr } from "@/shared/helpers/date.helper";
 import { formatCurrency } from "@/shared/helpers/format-currency.helper";
@@ -41,7 +41,7 @@ import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
 function EmployeeExamsTableSkeleton() {
   return (
     <div className="divide-y divide-border">
-      {Array.from({ length: EMPLOYEE_EXAMS_PAGE_SIZE }).map((_, index) => (
+      {Array.from({ length: TABLE_PAGE_SIZE }).map((_, index) => (
         <div
           key={index}
           className="flex animate-pulse items-center gap-4 px-5 py-4"

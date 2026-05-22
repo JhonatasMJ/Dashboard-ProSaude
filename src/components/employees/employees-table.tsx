@@ -21,9 +21,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
-import { useEmployees } from "@/hooks/use-employees";
+import { useEmployees } from "@/contexts/employees-context";
 import { cn } from "@/lib/utils";
-import { EMPLOYEES_PAGE_SIZE } from "@/shared/constants/employees.constants";
+import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatCpf } from "@/shared/helpers/cpf.helper";
 import { formatAgeFromBirthDate, formatDateBr } from "@/shared/helpers/date.helper";
@@ -32,7 +32,7 @@ import type { IEmployee } from "@/shared/interfaces/https/employee";
 function EmployeesTableSkeleton() {
   return (
     <div className="divide-y divide-border">
-      {Array.from({ length: EMPLOYEES_PAGE_SIZE }).map((_, index) => (
+      {Array.from({ length: TABLE_PAGE_SIZE }).map((_, index) => (
         <div
           key={index}
           className="flex animate-pulse items-center gap-4 px-5 py-4"

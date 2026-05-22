@@ -20,9 +20,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
-import { useCompanies } from "@/hooks/use-companies";
+import { useCompanies } from "@/contexts/companies-context";
 import { cn } from "@/lib/utils";
-import { COMPANIES_PAGE_SIZE } from "@/shared/constants/companies.constants";
+import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatCnpj } from "@/shared/helpers/input-masks.helper";
 import type { ICompany } from "@/shared/interfaces/https/company";
@@ -30,7 +30,7 @@ import type { ICompany } from "@/shared/interfaces/https/company";
 function CompaniesTableSkeleton() {
   return (
     <div className="divide-y divide-border">
-      {Array.from({ length: COMPANIES_PAGE_SIZE }).map((_, index) => (
+      {Array.from({ length: TABLE_PAGE_SIZE }).map((_, index) => (
         <div
           key={index}
           className="flex animate-pulse items-center gap-4 px-5 py-4"

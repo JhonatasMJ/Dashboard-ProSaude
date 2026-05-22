@@ -20,9 +20,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
-import { useExams } from "@/hooks/use-exams";
+import { useExams } from "@/contexts/exams-context";
 import { cn } from "@/lib/utils";
-import { EXAMS_PAGE_SIZE } from "@/shared/constants/exams.constants";
+import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatCurrency } from "@/shared/helpers/format-currency.helper";
 import type { IExam } from "@/shared/interfaces/https/exam";
@@ -30,7 +30,7 @@ import type { IExam } from "@/shared/interfaces/https/exam";
 function ExamsTableSkeleton() {
   return (
     <div className="divide-y divide-border">
-      {Array.from({ length: EXAMS_PAGE_SIZE }).map((_, index) => (
+      {Array.from({ length: TABLE_PAGE_SIZE }).map((_, index) => (
         <div
           key={index}
           className="flex animate-pulse items-center gap-4 px-5 py-4"

@@ -4,3 +4,7 @@ export function formatCurrency(value: number): string {
     currency: "BRL",
   });
 }
+
+export function formatPercent(value: number): string {
+  return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
+}

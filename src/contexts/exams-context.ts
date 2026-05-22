@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useContext } from "react";
 import type { IExam } from "@/shared/interfaces/https/exam";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import type { ExamFormData } from "@/types/exam-form.types";
@@ -20,3 +20,13 @@ export interface ExamsContextValue {
 }
 
 export const ExamsContext = createContext<ExamsContextValue | null>(null);
+
+export function useExams() {
+  const context = useContext(ExamsContext);
+
+  if (!context) {
+    throw new Error("useExams deve ser usado dentro de ExamsProvider");
+  }
+
+  return context;
+}

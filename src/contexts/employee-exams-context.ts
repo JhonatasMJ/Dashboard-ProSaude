@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useContext } from "react";
 import type { ICompany } from "@/shared/interfaces/https/company";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
@@ -40,3 +40,15 @@ export interface EmployeeExamsContextValue {
 
 export const EmployeeExamsContext =
   createContext<EmployeeExamsContextValue | null>(null);
+
+export function useEmployeeExams() {
+  const context = useContext(EmployeeExamsContext);
+
+  if (!context) {
+    throw new Error(
+      "useEmployeeExams deve ser usado dentro de EmployeeExamsProvider"
+    );
+  }
+
+  return context;
+}

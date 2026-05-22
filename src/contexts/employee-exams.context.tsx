@@ -10,10 +10,10 @@ import {
   type EmployeeExamsContextValue,
 } from "@/contexts/employee-exams-context";
 import {
-  EMPLOYEE_EXAMS_FILTER_DEBOUNCE_MS,
-  EMPLOYEE_EXAMS_FILTER_OPTIONS_PAGE_SIZE,
-  EMPLOYEE_EXAMS_PAGE_SIZE,
-} from "@/shared/constants/employee-exams.constants";
+  BULK_LIST_PAGE_SIZE,
+  FILTER_DEBOUNCE_MS,
+  TABLE_PAGE_SIZE,
+} from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import {
   formToEmployeeExamCreatePayload,
@@ -53,82 +53,101 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setDebouncedProfessionalName(professionalNameFilter.trim());
-      setPage(1);
-    }, EMPLOYEE_EXAMS_FILTER_DEBOUNCE_MS);
+      const next = professionalNameFilter.trim();
+      setDebouncedProfessionalName((prev) => (prev === next ? prev : next));
+    }, FILTER_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
   }, [professionalNameFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedProfessionalName]);
 
   const handleCompanyFilterChange = useCallback((value: string) => {
     setCompanyIdFilter(value);
     setEmployeeIdFilter("");
     setPage(1);
+    setIsLoadingFilters(true);
+    setIsLoading(true);
   }, []);
 
   const handleEmployeeFilterChange = useCallback((value: string) => {
     setEmployeeIdFilter(value);
     setPage(1);
+    setIsLoading(true);
   }, []);
 
   const handleExamFilterChange = useCallback((value: string) => {
     setExamIdFilter(value);
     setPage(1);
+    setIsLoading(true);
   }, []);
 
   const handleExamDateFromChange = useCallback((value: string) => {
     setExamDateFromFilter(value);
     setPage(1);
+    setIsLoading(true);
   }, []);
 
   const handleExamDateToChange = useCallback((value: string) => {
     setExamDateToFilter(value);
     setPage(1);
+    setIsLoading(true);
+  }, []);
+
+  const handlePageChange = useCallback((nextPage: number) => {
+    setIsLoading(true);
+    setPage(nextPage);
   }, []);
 
   useEffect(() => {
-    if (!employeeIdFilter || !companyIdFilter) return;
+    let active = true;
 
-    const employee = employees.find((item) => item.id === employeeIdFilter);
-    if (employee && employee.company.id !== companyIdFilter) {
-      setEmployeeIdFilter("");
-    }
-  }, [companyIdFilter, employeeIdFilter, employees]);
+    Promise.all([
+      companyService.list({
+        page: 1,
+        pageSize: BULK_LIST_PAGE_SIZE,
+      }),
+      employeeService.list({
+        page: 1,
+        pageSize: BULK_LIST_PAGE_SIZE,
+        ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
+      }),
+      examService.list({
+        page: 1,
+        pageSize: BULK_LIST_PAGE_SIZE,
+      }),
+    ])
+      .then(([companiesResponse, employeesResponse, examsResponse]) => {
+        if (!active) return;
+        setCompanies(companiesResponse.data);
+        setEmployees(employeesResponse.data);
+        setExams(examsResponse.data);
+      })
+      .catch(() => {
+        if (!active) return;
+        setCompanies([]);
+        setEmployees([]);
+        setExams([]);
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingFilters(false);
+        }
+      });
 
-  const fetchFilterOptions = useCallback(async () => {
-    setIsLoadingFilters(true);
-    try {
-      const [companiesResponse, employeesResponse, examsResponse] =
-        await Promise.all([
-          companyService.list({
-            page: 1,
-            pageSize: EMPLOYEE_EXAMS_FILTER_OPTIONS_PAGE_SIZE,
-          }),
-          employeeService.list({
-            page: 1,
-            pageSize: EMPLOYEE_EXAMS_FILTER_OPTIONS_PAGE_SIZE,
-            ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
-          }),
-          examService.list({
-            page: 1,
-            pageSize: EMPLOYEE_EXAMS_FILTER_OPTIONS_PAGE_SIZE,
-          }),
-        ]);
-      setCompanies(companiesResponse.data);
-      setEmployees(employeesResponse.data);
-      setExams(examsResponse.data);
-    } catch {
-      setCompanies([]);
-      setEmployees([]);
-      setExams([]);
-    } finally {
-      setIsLoadingFilters(false);
-    }
+    return () => {
+      active = false;
+    };
   }, [companyIdFilter]);
 
-  useEffect(() => {
-    fetchFilterOptions();
-  }, [fetchFilterOptions]);
+  const activeEmployeeIdFilter = useMemo(() => {
+    if (!employeeIdFilter || !companyIdFilter) return employeeIdFilter;
+    const employee = employees.find((item) => item.id === employeeIdFilter);
+    if (!employee || employee.company.id !== companyIdFilter) return "";
+    return employeeIdFilter;
+  }, [employeeIdFilter, companyIdFilter, employees]);
 
   const exportListParams = useMemo<EmployeeExamsReportListParams>(
     () => ({
@@ -136,7 +155,9 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
         ? { professionalName: debouncedProfessionalName }
         : {}),
       ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
-      ...(employeeIdFilter ? { employeeId: employeeIdFilter } : {}),
+      ...(activeEmployeeIdFilter
+        ? { employeeId: activeEmployeeIdFilter }
+        : {}),
       ...(examIdFilter ? { examId: examIdFilter } : {}),
       ...(examDateFromFilter ? { examDateFrom: examDateFromFilter } : {}),
       ...(examDateToFilter ? { examDateTo: examDateToFilter } : {}),
@@ -144,7 +165,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
     [
       debouncedProfessionalName,
       companyIdFilter,
-      employeeIdFilter,
+      activeEmployeeIdFilter,
       examIdFilter,
       examDateFromFilter,
       examDateToFilter,
@@ -154,7 +175,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
   const listParams = useMemo(
     () => ({
       page,
-      pageSize: EMPLOYEE_EXAMS_PAGE_SIZE,
+      pageSize: TABLE_PAGE_SIZE,
       ...exportListParams,
     }),
     [page, exportListParams]
@@ -196,23 +217,21 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
     employeeExamService
       .list(listParams)
       .then((response) => {
-        if (active) {
-          setLinks(response.data);
-          setMeta(response.meta);
-          setError(null);
-        }
+        if (!active) return;
+        setLinks(response.data);
+        setMeta(response.meta);
+        setError(null);
       })
       .catch((err) => {
-        if (active) {
-          setLinks([]);
-          setMeta(null);
-          setError(
-            getApiErrorMessage(
-              err,
-              "Não foi possível carregar os vínculos funcionário–exame."
-            )
-          );
-        }
+        if (!active) return;
+        setLinks([]);
+        setMeta(null);
+        setError(
+          getApiErrorMessage(
+            err,
+            "Não foi possível carregar os vínculos funcionário–exame."
+          )
+        );
       })
       .finally(() => {
         if (active) {
@@ -303,7 +322,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       setExamIdFilter: handleExamFilterChange,
       setExamDateFromFilter: handleExamDateFromChange,
       setExamDateToFilter: handleExamDateToChange,
-      setPage,
+      setPage: handlePageChange,
       refetch: () => fetchLinks(true),
       createLink,
       updateLink,
@@ -332,6 +351,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       handleExamFilterChange,
       handleExamDateFromChange,
       handleExamDateToChange,
+      handlePageChange,
       fetchLinks,
       createLink,
       updateLink,

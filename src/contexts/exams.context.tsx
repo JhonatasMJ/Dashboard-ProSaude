@@ -7,9 +7,9 @@ import {
 } from "react";
 import { ExamsContext, type ExamsContextValue } from "@/contexts/exams-context";
 import {
-  EXAMS_FILTER_DEBOUNCE_MS,
-  EXAMS_PAGE_SIZE,
-} from "@/shared/constants/exams.constants";
+  FILTER_DEBOUNCE_MS,
+  TABLE_PAGE_SIZE,
+} from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import {
   formToExamCreatePayload,
@@ -34,7 +34,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => {
       setDebouncedName(nameFilter.trim());
       setPage(1);
-    }, EXAMS_FILTER_DEBOUNCE_MS);
+    }, FILTER_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
   }, [nameFilter]);
@@ -49,7 +49,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
       try {
         const response = await examService.list({
           page,
-          pageSize: EXAMS_PAGE_SIZE,
+          pageSize: TABLE_PAGE_SIZE,
           ...(debouncedName ? { name: debouncedName } : {}),
         });
         setExams(response.data);
@@ -76,7 +76,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     examService
       .list({
         page,
-        pageSize: EXAMS_PAGE_SIZE,
+        pageSize: TABLE_PAGE_SIZE,
         ...(debouncedName ? { name: debouncedName } : {}),
       })
       .then((response) => {

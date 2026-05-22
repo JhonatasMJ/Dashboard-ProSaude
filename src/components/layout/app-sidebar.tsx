@@ -2,6 +2,7 @@ import logo from "@/assets/logo.svg";
 import { SidebarNavItem } from "@/components/layout/sidebar-nav-item";
 import { SidebarUserMenu } from "@/components/layout/sidebar-user-menu";
 import { dashboardNavItems } from "@/config/navigation";
+import { APP_VERSION } from "@/shared/constants/app-version";
 
 export function AppSidebar() {
   return (
@@ -19,6 +20,12 @@ export function AppSidebar() {
           <SidebarNavItem key={item.href} item={item} />
         ))}
       </nav>
+      <div className="border-t border-border px-2 py-2 flex justify-center">
+      <p className="px-2 pt-2 text-center text-[11px] tabular-nums text-muted-foreground">
+          v{APP_VERSION}
+        </p>
+        
+      </div>
 
       <div className="border-t border-border px-2 py-2">
         <SidebarUserMenu />

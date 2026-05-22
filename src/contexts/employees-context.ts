@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useContext } from "react";
 import type { ICompany } from "@/shared/interfaces/https/company";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
@@ -27,3 +27,13 @@ export interface EmployeesContextValue {
 export const EmployeesContext = createContext<EmployeesContextValue | null>(
   null
 );
+
+export function useEmployees() {
+  const context = useContext(EmployeesContext);
+
+  if (!context) {
+    throw new Error("useEmployees deve ser usado dentro de EmployeesProvider");
+  }
+
+  return context;
+}

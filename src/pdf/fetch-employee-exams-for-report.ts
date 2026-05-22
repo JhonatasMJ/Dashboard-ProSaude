@@ -1,4 +1,4 @@
-import { EMPLOYEE_EXAMS_REPORT_PAGE_SIZE } from "@/shared/constants/employee-exams.constants";
+import { BULK_LIST_PAGE_SIZE } from "@/shared/constants/app.constants";
 import type {
   IEmployeeExam,
   IEmployeeExamsListParams,
@@ -11,19 +11,19 @@ export async function fetchEmployeeExamsForReport(
 ): Promise<IEmployeeExam[]> {
   const all: IEmployeeExam[] = [];
   let page = 1;
-  let totalPages = 1;
+  let hasMore = true;
 
-  do {
+  while (hasMore) {
     const response = await employeeExamService.list({
       ...params,
       page,
-      pageSize: EMPLOYEE_EXAMS_REPORT_PAGE_SIZE,
+      pageSize: BULK_LIST_PAGE_SIZE,
     } satisfies IEmployeeExamsListParams);
 
     all.push(...response.data);
-    totalPages = response.meta.totalPages;
+    hasMore = page < response.meta.totalPages;
     page += 1;
-  } while (page <= totalPages);
+  }
 
   return all;
 }
