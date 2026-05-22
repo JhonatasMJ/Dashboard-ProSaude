@@ -39,7 +39,6 @@ function PopoverContent({
           matchTriggerWidth &&
             "w-(--anchor-width) min-w-(--anchor-width) max-w-(--anchor-width)"
         )}
-        style={matchTriggerWidth ? style : undefined}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"

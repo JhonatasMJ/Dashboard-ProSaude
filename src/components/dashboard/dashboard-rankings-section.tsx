@@ -169,7 +169,10 @@ export function DashboardRankingsSection({
                 tickLine={false}
               />
               <Tooltip
-                formatter={(value: number) => [formatValue(value), "Valor"]}
+                formatter={(value) => [
+                  formatValue(typeof value === "number" ? value : 0),
+                  "Valor",
+                ]}
                 labelStyle={{ fontWeight: 600 }}
                 contentStyle={{
                   borderRadius: 8,
