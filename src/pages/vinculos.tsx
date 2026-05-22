@@ -9,7 +9,8 @@ export default function VinculosPage() {
           <span className="text-primary">.</span>
         </h1>
         <p className="max-w-xl text-muted-foreground">
-          Registre e consulte os exames realizados por cada funcionário, com
+          Registre e consulte os exames realizados por cada funcionário. No
+          cadastro, é possível vincular vários exames de uma vez, com o mesmo
           profissional, data e hora.
         </p>
       </header>

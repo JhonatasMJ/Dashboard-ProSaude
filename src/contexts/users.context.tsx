@@ -5,27 +5,24 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  CompaniesContext,
-  type CompaniesContextValue,
-} from "@/contexts/companies-context";
+import { UsersContext, type UsersContextValue } from "@/contexts/users-context";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
   FILTER_DEBOUNCE_MS,
   TABLE_PAGE_SIZE,
 } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
-import { formToCompanyPayload } from "@/shared/helpers/company-form.helper";
+import { formToUserRegisterPayload } from "@/shared/helpers/user-form.helper";
 import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
-import type { ICompany } from "@/shared/interfaces/https/company";
+import type { IUser } from "@/shared/interfaces/https/user";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
-import { companyService } from "@/shared/services/company.service";
-import type { CompanyFormData } from "@/types/company-form.types";
+import { userService } from "@/shared/services/user.service";
+import type { UserRegisterFormData } from "@/types/user-register-form.types";
 
-export function CompaniesProvider({ children }: { children: ReactNode }) {
+export function UsersProvider({ children }: { children: ReactNode }) {
   const { startRequest, isStaleRequest, invalidateRequests } =
     useRequestGeneration();
-  const [companies, setCompanies] = useState<ICompany[]>([]);
+  const [users, setUsers] = useState<IUser[]>([]);
   const [meta, setMeta] = useState<IPaginationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +40,7 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [nameFilter]);
 
-  const fetchCompanies = useCallback(
+  const fetchUsers = useCallback(
     async (showLoading = false) => {
       const requestId = startRequest();
 
@@ -53,7 +50,7 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       try {
-        const response = await companyService.list({
+        const response = await userService.list({
           page,
           pageSize: TABLE_PAGE_SIZE,
           ...(debouncedName ? { name: debouncedName } : {}),
@@ -61,15 +58,15 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
 
         if (isStaleRequest(requestId)) return;
 
-        setCompanies(response.data);
+        setUsers(response.data);
         setMeta(response.meta);
       } catch (err) {
         if (isStaleRequest(requestId)) return;
 
-        setCompanies([]);
+        setUsers([]);
         setMeta(null);
         setError(
-          getApiErrorMessage(err, "Não foi possível carregar as empresas.")
+          getApiErrorMessage(err, "Não foi possível carregar os usuários.")
         );
       } finally {
         if (!isStaleRequest(requestId)) {
@@ -87,7 +84,7 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     setError(null);
 
-    companyService
+    userService
       .list({
         page,
         pageSize: TABLE_PAGE_SIZE,
@@ -95,16 +92,16 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
       })
       .then((response) => {
         if (!active || isStaleRequest(requestId)) return;
-        setCompanies(response.data);
+        setUsers(response.data);
         setMeta(response.meta);
         setError(null);
       })
       .catch((err) => {
         if (!active || isStaleRequest(requestId)) return;
-        setCompanies([]);
+        setUsers([]);
         setMeta(null);
         setError(
-          getApiErrorMessage(err, "Não foi possível carregar as empresas.")
+          getApiErrorMessage(err, "Não foi possível carregar os usuários.")
         );
       })
       .finally(() => {
@@ -118,14 +115,14 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
     };
   }, [page, debouncedName, startRequest, isStaleRequest]);
 
-  const createCompany = useCallback(
-    async (formData: CompanyFormData) => {
+  const createUser = useCallback(
+    async (formData: UserRegisterFormData) => {
       setIsSubmitting(true);
       try {
-        await companyService.create(formToCompanyPayload(formData));
+        await userService.register(formToUserRegisterPayload(formData));
         invalidateRequests();
         if (page === 1) {
-          await fetchCompanies();
+          await fetchUsers();
         } else {
           setPage(1);
         }
@@ -133,54 +130,40 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
         setIsSubmitting(false);
       }
     },
-    [page, fetchCompanies, invalidateRequests]
+    [page, fetchUsers, invalidateRequests]
   );
 
-  const updateCompany = useCallback(
-    async (id: string, formData: CompanyFormData) => {
-      setIsSubmitting(true);
-      try {
-        await companyService.update(id, formToCompanyPayload(formData));
-        invalidateRequests();
-        await fetchCompanies();
-      } finally {
-        setIsSubmitting(false);
-      }
-    },
-    [fetchCompanies, invalidateRequests]
-  );
-
-  const deleteCompany = useCallback(
+  const deleteUser = useCallback(
     async (id: string) => {
       setIsSubmitting(true);
       try {
-        await companyService.delete(id);
+        await userService.delete(id);
         invalidateRequests();
 
-        const isLastOnPage = companies.length === 1;
+        const isLastOnPage = users.length === 1;
         const { items, meta: nextMeta } = removeItemFromPaginatedList(
-          companies,
+          users,
           id,
           meta
         );
-        setCompanies(items);
+        setUsers(items);
         setMeta(nextMeta);
 
         if (isLastOnPage && page > 1) {
           setPage((current) => current - 1);
         } else {
-          await fetchCompanies();
+          await fetchUsers();
         }
       } finally {
         setIsSubmitting(false);
       }
     },
-    [companies, meta, page, fetchCompanies, invalidateRequests]
+    [users, meta, page, fetchUsers, invalidateRequests]
   );
 
-  const value = useMemo<CompaniesContextValue>(
+  const value = useMemo<UsersContextValue>(
     () => ({
-      companies,
+      users,
       meta,
       isLoading,
       isSubmitting,
@@ -189,29 +172,25 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
       page,
       setNameFilter,
       setPage,
-      refetch: () => fetchCompanies(true),
-      createCompany,
-      updateCompany,
-      deleteCompany,
+      refetch: () => fetchUsers(true),
+      createUser,
+      deleteUser,
     }),
     [
-      companies,
+      users,
       meta,
       isLoading,
       isSubmitting,
       error,
       nameFilter,
       page,
-      fetchCompanies,
-      createCompany,
-      updateCompany,
-      deleteCompany,
+      fetchUsers,
+      createUser,
+      deleteUser,
     ]
   );
 
   return (
-    <CompaniesContext.Provider value={value}>
-      {children}
-    </CompaniesContext.Provider>
+    <UsersContext.Provider value={value}>{children}</UsersContext.Provider>
   );
 }

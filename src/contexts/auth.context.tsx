@@ -7,6 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  clearAuthStorage,
+} from "@/shared/helpers/auth-storage.helper";
 import { STORAGE_USER_KEY } from "@/shared/helpers/axios.helper";
 import type {
   IAuthenticateResponse,
@@ -33,7 +36,7 @@ function getStoredUser(): IUser | null {
     const { user } = JSON.parse(stored) as IAuthenticateResponse;
     return user ?? null;
   } catch {
-    localStorage.removeItem(STORAGE_USER_KEY);
+    clearAuthStorage();
     return null;
   }
 }
@@ -53,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_USER_KEY);
+    authService.logout();
     setUser(null);
   }, []);
 

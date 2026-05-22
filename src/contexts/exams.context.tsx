@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import { ExamsContext, type ExamsContextValue } from "@/contexts/exams-context";
+import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
   FILTER_DEBOUNCE_MS,
   TABLE_PAGE_SIZE,
@@ -15,12 +16,15 @@ import {
   formToExamCreatePayload,
   formToExamUpdatePayload,
 } from "@/shared/helpers/exam-form.helper";
+import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
 import type { IExam } from "@/shared/interfaces/https/exam";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import { examService } from "@/shared/services/exam.service";
 import type { ExamFormData } from "@/types/exam-form.types";
 
 export function ExamsProvider({ children }: { children: ReactNode }) {
+  const { startRequest, isStaleRequest, invalidateRequests } =
+    useRequestGeneration();
   const [exams, setExams] = useState<IExam[]>([]);
   const [meta, setMeta] = useState<IPaginationMeta | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,6 +45,8 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
 
   const fetchExams = useCallback(
     async (showLoading = false) => {
+      const requestId = startRequest();
+
       if (showLoading) {
         setIsLoading(true);
       }
@@ -52,23 +58,31 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
           pageSize: TABLE_PAGE_SIZE,
           ...(debouncedName ? { name: debouncedName } : {}),
         });
+
+        if (isStaleRequest(requestId)) return;
+
         setExams(response.data);
         setMeta(response.meta);
       } catch (err) {
+        if (isStaleRequest(requestId)) return;
+
         setExams([]);
         setMeta(null);
         setError(
           getApiErrorMessage(err, "Não foi possível carregar os exames.")
         );
       } finally {
-        setIsLoading(false);
+        if (!isStaleRequest(requestId)) {
+          setIsLoading(false);
+        }
       }
     },
-    [page, debouncedName]
+    [page, debouncedName, startRequest, isStaleRequest]
   );
 
   useEffect(() => {
     let active = true;
+    const requestId = startRequest();
 
     setIsLoading(true);
     setError(null);
@@ -80,23 +94,21 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
         ...(debouncedName ? { name: debouncedName } : {}),
       })
       .then((response) => {
-        if (active) {
-          setExams(response.data);
-          setMeta(response.meta);
-          setError(null);
-        }
+        if (!active || isStaleRequest(requestId)) return;
+        setExams(response.data);
+        setMeta(response.meta);
+        setError(null);
       })
       .catch((err) => {
-        if (active) {
-          setExams([]);
-          setMeta(null);
-          setError(
-            getApiErrorMessage(err, "Não foi possível carregar os exames.")
-          );
-        }
+        if (!active || isStaleRequest(requestId)) return;
+        setExams([]);
+        setMeta(null);
+        setError(
+          getApiErrorMessage(err, "Não foi possível carregar os exames.")
+        );
       })
       .finally(() => {
-        if (active) {
+        if (active && !isStaleRequest(requestId)) {
           setIsLoading(false);
         }
       });
@@ -104,13 +116,14 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [page, debouncedName]);
+  }, [page, debouncedName, startRequest, isStaleRequest]);
 
   const createExam = useCallback(
     async (formData: ExamFormData) => {
       setIsSubmitting(true);
       try {
         await examService.create(formToExamCreatePayload(formData));
+        invalidateRequests();
         if (page === 1) {
           await fetchExams();
         } else {
@@ -120,7 +133,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
         setIsSubmitting(false);
       }
     },
-    [page, fetchExams]
+    [page, fetchExams, invalidateRequests]
   );
 
   const updateExam = useCallback(
@@ -128,12 +141,13 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
       setIsSubmitting(true);
       try {
         await examService.update(id, formToExamUpdatePayload(formData));
+        invalidateRequests();
         await fetchExams();
       } finally {
         setIsSubmitting(false);
       }
     },
-    [fetchExams]
+    [fetchExams, invalidateRequests]
   );
 
   const deleteExam = useCallback(
@@ -141,7 +155,17 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
       setIsSubmitting(true);
       try {
         await examService.delete(id);
+        invalidateRequests();
+
         const isLastOnPage = exams.length === 1;
+        const { items, meta: nextMeta } = removeItemFromPaginatedList(
+          exams,
+          id,
+          meta
+        );
+        setExams(items);
+        setMeta(nextMeta);
+
         if (isLastOnPage && page > 1) {
           setPage((current) => current - 1);
         } else {
@@ -151,7 +175,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
         setIsSubmitting(false);
       }
     },
-    [exams.length, page, fetchExams]
+    [exams, meta, page, fetchExams, invalidateRequests]
   );
 
   const value = useMemo<ExamsContextValue>(

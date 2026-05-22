@@ -5,70 +5,57 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useLocation } from "react-router-dom";
 import {
   DashboardContext,
   type DashboardContextValue,
 } from "@/contexts/dashboard-context";
+import { useRequestGeneration } from "@/hooks/use-request-generation";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import type { IDashboardSummaryData } from "@/shared/interfaces/https/dashboard-summary";
 import { dashboardService } from "@/shared/services/dashboard.service";
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  const { startRequest, isStaleRequest } = useRequestGeneration();
   const [summary, setSummary] = useState<IDashboardSummaryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadSummary = useCallback(async (showLoading = false) => {
-    if (showLoading) {
-      setIsLoading(true);
-    }
-    setError(null);
+  const loadSummary = useCallback(
+    async (showLoading = false) => {
+      const requestId = startRequest();
 
-    try {
-      const { data } = await dashboardService.getSummary();
-      setSummary(data);
-    } catch (err) {
-      setSummary(null);
-      setError(
-        getApiErrorMessage(err, "Não foi possível carregar o resumo do painel.")
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      if (showLoading) {
+        setIsLoading(true);
+      }
+      setError(null);
 
-  useEffect(() => {
-    let active = true;
+      try {
+        const { data } = await dashboardService.getSummary();
 
-    dashboardService
-      .getSummary()
-      .then(({ data }) => {
-        if (active) {
-          setSummary(data);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (active) {
-          setSummary(null);
-          setError(
-            getApiErrorMessage(
-              err,
-              "Não foi possível carregar o resumo do painel."
-            )
-          );
-        }
-      })
-      .finally(() => {
-        if (active) {
+        if (isStaleRequest(requestId)) return;
+
+        setSummary(data);
+      } catch (err) {
+        if (isStaleRequest(requestId)) return;
+
+        setSummary(null);
+        setError(
+          getApiErrorMessage(err, "Não foi possível carregar o resumo do painel.")
+        );
+      } finally {
+        if (!isStaleRequest(requestId)) {
           setIsLoading(false);
         }
-      });
+      }
+    },
+    [startRequest, isStaleRequest]
+  );
 
-    return () => {
-      active = false;
-    };
-  }, []);
+  useEffect(() => {
+    loadSummary(true);
+  }, [location.pathname, loadSummary]);
 
   const refetch = useCallback(() => loadSummary(true), [loadSummary]);
 

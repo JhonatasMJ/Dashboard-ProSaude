@@ -9,6 +9,7 @@ import {
   EmployeeExamsContext,
   type EmployeeExamsContextValue,
 } from "@/contexts/employee-exams-context";
+import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
   BULK_LIST_PAGE_SIZE,
   FILTER_DEBOUNCE_MS,
@@ -16,9 +17,10 @@ import {
 } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import {
-  formToEmployeeExamCreatePayload,
+  formToEmployeeExamCreatePayloads,
   formToEmployeeExamUpdatePayload,
 } from "@/shared/helpers/employee-exam-form.helper";
+import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
 import type { ICompany } from "@/shared/interfaces/https/company";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
@@ -32,6 +34,8 @@ import type { EmployeeExamsReportListParams } from "@/pdf/employee-exams-report.
 import type { EmployeeExamFormData } from "@/types/employee-exam-form.types";
 
 export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
+  const { startRequest, isStaleRequest, invalidateRequests } =
+    useRequestGeneration();
   const [links, setLinks] = useState<IEmployeeExam[]>([]);
   const [meta, setMeta] = useState<IPaginationMeta | null>(null);
   const [companies, setCompanies] = useState<ICompany[]>([]);
@@ -183,6 +187,8 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
 
   const fetchLinks = useCallback(
     async (showLoading = false) => {
+      const requestId = startRequest();
+
       if (showLoading) {
         setIsLoading(true);
       }
@@ -190,9 +196,14 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
 
       try {
         const response = await employeeExamService.list(listParams);
+
+        if (isStaleRequest(requestId)) return;
+
         setLinks(response.data);
         setMeta(response.meta);
       } catch (err) {
+        if (isStaleRequest(requestId)) return;
+
         setLinks([]);
         setMeta(null);
         setError(
@@ -202,14 +213,17 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
           )
         );
       } finally {
-        setIsLoading(false);
+        if (!isStaleRequest(requestId)) {
+          setIsLoading(false);
+        }
       }
     },
-    [listParams]
+    [listParams, startRequest, isStaleRequest]
   );
 
   useEffect(() => {
     let active = true;
+    const requestId = startRequest();
 
     setIsLoading(true);
     setError(null);
@@ -217,13 +231,13 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
     employeeExamService
       .list(listParams)
       .then((response) => {
-        if (!active) return;
+        if (!active || isStaleRequest(requestId)) return;
         setLinks(response.data);
         setMeta(response.meta);
         setError(null);
       })
       .catch((err) => {
-        if (!active) return;
+        if (!active || isStaleRequest(requestId)) return;
         setLinks([]);
         setMeta(null);
         setError(
@@ -234,7 +248,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
         );
       })
       .finally(() => {
-        if (active) {
+        if (active && !isStaleRequest(requestId)) {
           setIsLoading(false);
         }
       });
@@ -242,15 +256,17 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [listParams]);
+  }, [listParams, startRequest, isStaleRequest]);
 
   const createLink = useCallback(
     async (formData: EmployeeExamFormData) => {
       setIsSubmitting(true);
       try {
-        await employeeExamService.create(
-          formToEmployeeExamCreatePayload(formData)
+        const payloads = formToEmployeeExamCreatePayloads(formData);
+        await Promise.all(
+          payloads.map((payload) => employeeExamService.create(payload))
         );
+        invalidateRequests();
         if (page === 1) {
           await fetchLinks();
         } else {
@@ -260,7 +276,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
         setIsSubmitting(false);
       }
     },
-    [page, fetchLinks]
+    [page, fetchLinks, invalidateRequests]
   );
 
   const updateLink = useCallback(
@@ -271,12 +287,13 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
           id,
           formToEmployeeExamUpdatePayload(formData)
         );
+        invalidateRequests();
         await fetchLinks();
       } finally {
         setIsSubmitting(false);
       }
     },
-    [fetchLinks]
+    [fetchLinks, invalidateRequests]
   );
 
   const deleteLink = useCallback(
@@ -284,7 +301,17 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       setIsSubmitting(true);
       try {
         await employeeExamService.delete(id);
+        invalidateRequests();
+
         const isLastOnPage = links.length === 1;
+        const { items, meta: nextMeta } = removeItemFromPaginatedList(
+          links,
+          id,
+          meta
+        );
+        setLinks(items);
+        setMeta(nextMeta);
+
         if (isLastOnPage && page > 1) {
           setPage((current) => current - 1);
         } else {
@@ -294,7 +321,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
         setIsSubmitting(false);
       }
     },
-    [links.length, page, fetchLinks]
+    [links, meta, page, fetchLinks, invalidateRequests]
   );
 
   const value = useMemo<EmployeeExamsContextValue>(

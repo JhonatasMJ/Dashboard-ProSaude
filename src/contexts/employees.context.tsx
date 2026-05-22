@@ -9,6 +9,7 @@ import {
   EmployeesContext,
   type EmployeesContextValue,
 } from "@/contexts/employees-context";
+import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
   BULK_LIST_PAGE_SIZE,
   FILTER_DEBOUNCE_MS,
@@ -19,6 +20,7 @@ import {
   formToEmployeeCreatePayload,
   formToEmployeeUpdatePayload,
 } from "@/shared/helpers/employee-form.helper";
+import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
 import type { ICompany } from "@/shared/interfaces/https/company";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
@@ -27,6 +29,8 @@ import { employeeService } from "@/shared/services/employee.service";
 import type { EmployeeFormData } from "@/types/employee-form.types";
 
 export function EmployeesProvider({ children }: { children: ReactNode }) {
+  const { startRequest, isStaleRequest, invalidateRequests } =
+    useRequestGeneration();
   const [employees, setEmployees] = useState<IEmployee[]>([]);
   const [meta, setMeta] = useState<IPaginationMeta | null>(null);
   const [companies, setCompanies] = useState<ICompany[]>([]);
@@ -70,6 +74,8 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
 
   const fetchEmployees = useCallback(
     async (showLoading = false) => {
+      const requestId = startRequest();
+
       if (showLoading) {
         setIsLoading(true);
       }
@@ -82,19 +88,26 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
           ...(debouncedName ? { name: debouncedName } : {}),
           ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
         });
+
+        if (isStaleRequest(requestId)) return;
+
         setEmployees(response.data);
         setMeta(response.meta);
       } catch (err) {
+        if (isStaleRequest(requestId)) return;
+
         setEmployees([]);
         setMeta(null);
         setError(
           getApiErrorMessage(err, "Não foi possível carregar os funcionários.")
         );
       } finally {
-        setIsLoading(false);
+        if (!isStaleRequest(requestId)) {
+          setIsLoading(false);
+        }
       }
     },
-    [page, debouncedName, companyIdFilter]
+    [page, debouncedName, companyIdFilter, startRequest, isStaleRequest]
   );
 
   useEffect(() => {
@@ -103,6 +116,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
+    const requestId = startRequest();
 
     setIsLoading(true);
     setError(null);
@@ -115,23 +129,21 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
         ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
       })
       .then((response) => {
-        if (active) {
-          setEmployees(response.data);
-          setMeta(response.meta);
-          setError(null);
-        }
+        if (!active || isStaleRequest(requestId)) return;
+        setEmployees(response.data);
+        setMeta(response.meta);
+        setError(null);
       })
       .catch((err) => {
-        if (active) {
-          setEmployees([]);
-          setMeta(null);
-          setError(
-            getApiErrorMessage(err, "Não foi possível carregar os funcionários.")
-          );
-        }
+        if (!active || isStaleRequest(requestId)) return;
+        setEmployees([]);
+        setMeta(null);
+        setError(
+          getApiErrorMessage(err, "Não foi possível carregar os funcionários.")
+        );
       })
       .finally(() => {
-        if (active) {
+        if (active && !isStaleRequest(requestId)) {
           setIsLoading(false);
         }
       });
@@ -139,13 +151,14 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [page, debouncedName, companyIdFilter]);
+  }, [page, debouncedName, companyIdFilter, startRequest, isStaleRequest]);
 
   const createEmployee = useCallback(
     async (formData: EmployeeFormData) => {
       setIsSubmitting(true);
       try {
         await employeeService.create(formToEmployeeCreatePayload(formData));
+        invalidateRequests();
         if (page === 1) {
           await fetchEmployees();
         } else {
@@ -155,7 +168,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
         setIsSubmitting(false);
       }
     },
-    [page, fetchEmployees]
+    [page, fetchEmployees, invalidateRequests]
   );
 
   const updateEmployee = useCallback(
@@ -163,12 +176,13 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
       setIsSubmitting(true);
       try {
         await employeeService.update(id, formToEmployeeUpdatePayload(formData));
+        invalidateRequests();
         await fetchEmployees();
       } finally {
         setIsSubmitting(false);
       }
     },
-    [fetchEmployees]
+    [fetchEmployees, invalidateRequests]
   );
 
   const deleteEmployee = useCallback(
@@ -176,7 +190,17 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
       setIsSubmitting(true);
       try {
         await employeeService.delete(id);
+        invalidateRequests();
+
         const isLastOnPage = employees.length === 1;
+        const { items, meta: nextMeta } = removeItemFromPaginatedList(
+          employees,
+          id,
+          meta
+        );
+        setEmployees(items);
+        setMeta(nextMeta);
+
         if (isLastOnPage && page > 1) {
           setPage((current) => current - 1);
         } else {
@@ -186,7 +210,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
         setIsSubmitting(false);
       }
     },
-    [employees.length, page, fetchEmployees]
+    [employees, meta, page, fetchEmployees, invalidateRequests]
   );
 
   const value = useMemo<EmployeesContextValue>(

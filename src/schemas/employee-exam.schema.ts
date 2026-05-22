@@ -5,7 +5,11 @@ const EXAM_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export const employeeExamSchema = yup.object({
   employeeId: yup.string().required("Funcionário é obrigatório"),
-  examId: yup.string().required("Exame é obrigatório"),
+  examIds: yup
+    .array()
+    .of(yup.string().defined())
+    .min(1, "Selecione pelo menos um exame")
+    .required(),
   professionalName: yup
     .string()
     .required("Nome do profissional é obrigatório")

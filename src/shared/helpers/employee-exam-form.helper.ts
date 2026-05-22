@@ -14,16 +14,14 @@ export function employeeExamToFormValues(
 ): EmployeeExamFormData {
   return {
     employeeId: link.employee.id,
-    examId: link.exam.id,
+    examIds: [link.exam.id],
     professionalName: link.professionalName,
     examDate: dateOnlyToBrDateInput(link.examDate),
     examTime: link.examTime,
   };
 }
 
-export function formToEmployeeExamCreatePayload(
-  data: EmployeeExamFormData
-): IEmployeeExamCreatePayload {
+function formToEmployeeExamSharedFields(data: EmployeeExamFormData) {
   const examDate = brDateInputToDateOnly(data.examDate);
   if (!examDate) {
     throw new Error("Data do exame inválida");
@@ -31,26 +29,33 @@ export function formToEmployeeExamCreatePayload(
 
   return {
     employee: { id: data.employeeId },
-    exam: { id: data.examId },
     professionalName: data.professionalName.trim(),
     examDate,
     examTime: data.examTime.trim(),
   };
 }
 
+export function formToEmployeeExamCreatePayloads(
+  data: EmployeeExamFormData
+): IEmployeeExamCreatePayload[] {
+  const shared = formToEmployeeExamSharedFields(data);
+
+  return data.examIds.map((examId) => ({
+    ...shared,
+    exam: { id: examId },
+  }));
+}
+
 export function formToEmployeeExamUpdatePayload(
   data: EmployeeExamFormData
 ): IEmployeeExamUpdatePayload {
-  const examDate = brDateInputToDateOnly(data.examDate);
-  if (!examDate) {
-    throw new Error("Data do exame inválida");
+  const examId = data.examIds[0];
+  if (!examId) {
+    throw new Error("Exame é obrigatório");
   }
 
   return {
-    employee: { id: data.employeeId },
-    exam: { id: data.examId },
-    professionalName: data.professionalName.trim(),
-    examDate,
-    examTime: data.examTime.trim(),
+    ...formToEmployeeExamSharedFields(data),
+    exam: { id: examId },
   };
 }

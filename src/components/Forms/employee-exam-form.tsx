@@ -1,13 +1,21 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useMemo, type ReactNode } from "react";
-import { useForm, type Resolver } from "react-hook-form";
+import { Controller, useForm, type Resolver } from "react-hook-form";
 import { InputLabel } from "@/components/input-label";
 import { MaskedInputLabel } from "@/components/masked-input-label";
+import { MultiSelectLabel } from "@/components/multi-select-label";
 import { SelectLabel } from "@/components/select-label";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { employeeExamSchema } from "@/schemas/employee-exam.schema";
 import { employeeExamToFormValues } from "@/shared/helpers/employee-exam-form.helper";
-import { formatCurrency } from "@/shared/helpers/format-currency.helper";
 import { birthDateMask, examTimeMask } from "@/shared/helpers/input-masks.helper";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
@@ -29,7 +37,7 @@ interface EmployeeExamFormProps {
 
 const emptyValues: EmployeeExamFormData = {
   employeeId: "",
-  examId: "",
+  examIds: [],
   professionalName: "",
   examDate: "",
   examTime: "",
@@ -68,6 +76,7 @@ export function EmployeeExamForm({
   onSubmit,
   onCancel,
 }: EmployeeExamFormProps) {
+  const isEditing = !!defaultValues;
   const isSheet = variant === "sheet";
 
   const employeeOptions = useMemo(
@@ -88,18 +97,12 @@ export function EmployeeExamForm({
     [exams]
   );
 
-  const { control, handleSubmit, watch } = useForm<EmployeeExamFormData>({
+  const { control, handleSubmit } = useForm<EmployeeExamFormData>({
     resolver: yupResolver(employeeExamSchema) as Resolver<EmployeeExamFormData>,
     defaultValues: defaultValues
       ? employeeExamToFormValues(defaultValues)
       : emptyValues,
   });
-
-  const examId = watch("examId");
-  const selectedExam = useMemo(
-    () => exams.find((exam) => exam.id === examId),
-    [exams, examId]
-  );
 
   return (
     <form
@@ -110,7 +113,11 @@ export function EmployeeExamForm({
     >
       <FormSection
         title="Vínculo funcionário × exame"
-        description="Registre qual exame do catálogo foi realizado por qual funcionário."
+        description={
+          isEditing
+            ? "Atualize os dados deste vínculo."
+            : "Selecione um ou mais exames realizados pelo funcionário na mesma data e hora."
+        }
       >
         <SelectLabel
           control={control}
@@ -125,31 +132,70 @@ export function EmployeeExamForm({
           disabled={employees.length === 0 || isSubmitting}
         />
 
-        <SelectLabel
-          control={control}
-          name="examId"
-          label="Exame (catálogo)"
-          options={examOptions}
-          placeholder={
-            exams.length === 0
-              ? "Nenhum exame no catálogo"
-              : "Selecione o exame"
-          }
-          disabled={exams.length === 0 || isSubmitting}
-        />
-
-        {selectedExam && (
-          <p className="rounded-md border border-border/80 bg-muted/20 px-3.5 py-2.5 text-xs text-muted-foreground">
-            Preço:{" "}
-            <span className="font-medium text-foreground">
-              {formatCurrency(selectedExam.price)}
-            </span>
-            {" · "}
-            Lucro:{" "}
-            <span className="font-medium text-foreground">
-              {formatCurrency(selectedExam.profit)}
-            </span>
-          </p>
+        {isEditing ? (
+          <Controller
+            name="examIds"
+            control={control}
+            render={({ field, fieldState }) => (
+              <div className="flex w-full flex-col gap-2.5">
+                <Label htmlFor={`${formId}-exam`} className="text-sm">
+                  Exame (catálogo)
+                </Label>
+                <Select
+                  value={field.value[0] || null}
+                  onValueChange={(value) =>
+                    field.onChange(value ? [String(value)] : [])
+                  }
+                  items={examOptions}
+                  disabled={exams.length === 0 || isSubmitting}
+                >
+                  <SelectTrigger
+                    id={`${formId}-exam`}
+                    aria-invalid={!!fieldState.error}
+                    className={cn(
+                      "h-11! w-full min-w-0 justify-between rounded-md px-3.5 text-base shadow-none",
+                      fieldState.error &&
+                        "border-destructive ring-3 ring-destructive/20"
+                    )}
+                  >
+                    <SelectValue
+                      placeholder={
+                        exams.length === 0
+                          ? "Nenhum exame no catálogo"
+                          : "Selecione o exame"
+                      }
+                      className="truncate"
+                    />
+                  </SelectTrigger>
+                  <SelectContent align="start">
+                    {examOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <span className="block truncate">{option.label}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {fieldState.error?.message && (
+                  <p className="text-sm text-destructive">
+                    {fieldState.error.message}
+                  </p>
+                )}
+              </div>
+            )}
+          />
+        ) : (
+          <MultiSelectLabel
+            control={control}
+            name="examIds"
+            label="Exames (catálogo)"
+            options={examOptions}
+            placeholder={
+              exams.length === 0
+                ? "Nenhum exame no catálogo"
+                : "Selecione os exames"
+            }
+            disabled={exams.length === 0 || isSubmitting}
+          />
         )}
 
         <InputLabel

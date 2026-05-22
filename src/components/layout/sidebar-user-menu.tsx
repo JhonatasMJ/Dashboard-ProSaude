@@ -3,15 +3,10 @@ import { ChevronsUpDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ConfirmModal } from "@/components/confirm-modal";
 import { SidebarMenuItem } from "@/components/layout/sidebar-menu-item";
-import { LayoutGridIcon } from "@/components/ui/layout-grid";
 import { LogoutIcon } from "@/components/ui/logout";
-import { MessageCircleIcon } from "@/components/ui/message-circle";
-import { SettingsIcon } from "@/components/ui/settings";
-import { UsersIcon } from "@/components/ui/users";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/auth.context";
@@ -36,7 +31,7 @@ export function SidebarUserMenu() {
       <DropdownMenu>
         <DropdownMenuTrigger
           className={cn(
-            "group/nav flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left outline-none",
+            "group/nav flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left outline-none",
             "transition-colors hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary/30"
           )}
         >
@@ -55,13 +50,6 @@ export function SidebarUserMenu() {
           sideOffset={6}
           className="w-52 p-1"
         >
-          <SidebarMenuItem icon={SettingsIcon}>Configurações</SidebarMenuItem>
-          <SidebarMenuItem icon={LayoutGridIcon}>Plano</SidebarMenuItem>
-          <SidebarMenuItem icon={MessageCircleIcon}>
-            Feedback e Bugs
-          </SidebarMenuItem>
-          <SidebarMenuItem icon={UsersIcon}>Comunidade</SidebarMenuItem>
-          <DropdownMenuSeparator className="my-1" />
           <SidebarMenuItem
             icon={LogoutIcon}
             variant="destructive"

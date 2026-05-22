@@ -3,13 +3,16 @@ import { CompaniesProvider } from "@/contexts/companies.context";
 import { EmployeeExamsProvider } from "@/contexts/employee-exams.context";
 import { EmployeesProvider } from "@/contexts/employees.context";
 import { ExamsProvider } from "@/contexts/exams.context";
+import { UsersProvider } from "@/contexts/users.context";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import CompaniesPage from "@/pages/companies";
 import Dashboard from "@/pages/dashboard";
 import EmployeesPage from "@/pages/employees";
 import ExamsPage from "@/pages/exams";
+import UsersPage from "@/pages/users";
 import VinculosPage from "@/pages/vinculos";
 import Login from "@/pages/login";
+import { AdminRoute } from "@/routes/admin-route";
 import { RootLayout } from "@/routes/root-layout";
 
 export const router = createBrowserRouter([
@@ -65,6 +68,17 @@ export const router = createBrowserRouter([
               </EmployeeExamsProvider>
             ),
             handle: { title: "Vínculos" },
+          },
+          {
+            path: "usuarios",
+            element: (
+              <AdminRoute>
+                <UsersProvider>
+                  <UsersPage />
+                </UsersProvider>
+              </AdminRoute>
+            ),
+            handle: { title: "Usuários" },
           },
         ],
       },

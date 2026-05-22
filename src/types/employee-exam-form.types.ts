@@ -1,6 +1,6 @@
 export type EmployeeExamFormData = {
   employeeId: string;
-  examId: string;
+  examIds: string[];
   professionalName: string;
   examDate: string;
   examTime: string;

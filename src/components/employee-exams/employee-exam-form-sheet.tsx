@@ -43,7 +43,12 @@ export function EmployeeExamFormSheet({
         toast.success("Vínculo atualizado com sucesso.");
       } else {
         await createLink(data);
-        toast.success("Vínculo cadastrado com sucesso.");
+        const count = data.examIds.length;
+        toast.success(
+          count === 1
+            ? "Vínculo cadastrado com sucesso."
+            : `${count} vínculos cadastrados com sucesso.`
+        );
       }
       onOpenChange(false);
     } catch (error) {
@@ -74,7 +79,7 @@ export function EmployeeExamFormSheet({
           <SheetDescription className="text-sm leading-relaxed">
             {isEditing
               ? "Atualize funcionário, exame, profissional e data/hora."
-              : "Vincule um funcionário a um exame do catálogo."}
+              : "Vincule um funcionário a um ou mais exames do catálogo na mesma data e hora."}
           </SheetDescription>
         </SheetHeader>
 
@@ -103,7 +108,7 @@ export function EmployeeExamFormSheet({
               ? "Salvando..."
               : isEditing
                 ? "Salvar alterações"
-                : "Cadastrar vínculo"}
+                : "Cadastrar vínculo(s)"}
           </Button>
           <Button
             type="button"

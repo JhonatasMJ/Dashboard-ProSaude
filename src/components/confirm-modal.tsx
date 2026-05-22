@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import {
   AlertDialog,
+  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface ConfirmModalProps {
@@ -48,14 +48,14 @@ export function ConfirmModal({
           >
             {cancelLabel}
           </AlertDialogCancel>
-          <Button
+          <AlertDialogAction
             variant={confirmVariant}
             className={cn("h-9.5 min-w-0 flex-1 rounded-md")}
             disabled={isLoading}
-            onClick={onConfirm}
+            onClick={() => void onConfirm()}
           >
             {isLoading ? "Aguarde..." : confirmLabel}
-          </Button>
+          </AlertDialogAction>
         </div>
       </AlertDialogContent>
     </AlertDialog>
