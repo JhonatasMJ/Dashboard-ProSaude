@@ -11,7 +11,14 @@ node_modules
 dist
 dist-ssr
 *.local
-.env*
+
+# Variáveis de ambiente (nunca versionar segredos)
+.env
+.env.local
+.env.*.local
+
+# Template sem segredos pode ir no repositório
+!.env.example
 
 # Editor directories and files
 .vscode/*

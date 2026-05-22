@@ -1,4 +1,4 @@
-import { FileDown, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ButtonAnimatedIcon } from "@/components/button-animated-icon";
@@ -9,6 +9,7 @@ import { CompanyFilterSelect } from "@/components/exams/company-filter-select";
 import { DeleteModal } from "@/components/delete-modal";
 import { Button } from "@/components/ui/button";
 import { DeleteIcon } from "@/components/ui/delete";
+import { FileTextIcon } from "@/components/ui/file-text";
 import { PlusIcon } from "@/components/ui/plus";
 import { SquarePenIcon } from "@/components/ui/square-pen";
 import { DatePickerLabel } from "@/components/date-picker-label";
@@ -186,6 +187,7 @@ export function EmployeeExamsTable() {
   const [deletingLink, setDeletingLink] = useState<IEmployeeExam | null>(null);
   const plusIconHeader = useButtonAnimatedIcon();
   const plusIconEmpty = useButtonAnimatedIcon();
+  const pdfIcon = useButtonAnimatedIcon();
 
   const totalCount = meta?.total ?? 0;
   const hasActiveFilters =
@@ -279,13 +281,18 @@ export function EmployeeExamsTable() {
             </div>
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <Button
-                variant="outline"
-                className="rounded-md py-4.5"
+                className="rounded-md bg-secondary py-4.5 text-secondary-foreground hover:bg-secondary/90"
                 size="lg"
                 onClick={handleExportPdf}
                 disabled={isLoading || isLoadingFilters || isExportingPdf}
+                {...pdfIcon.rowHandlers}
               >
-                <FileDown className="size-4" />
+                <ButtonAnimatedIcon
+                  icon={FileTextIcon}
+                  iconRef={pdfIcon.iconRef}
+                  size={16}
+                  className="text-secondary-foreground"
+                />
                 {isExportingPdf ? "Gerando PDF..." : "Gerar PDF"}
               </Button>
               <Button

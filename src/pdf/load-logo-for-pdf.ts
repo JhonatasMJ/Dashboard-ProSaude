@@ -1,4 +1,4 @@
-import logoUrl from "@/assets/logo.svg?url";
+import logoUrl from "@/assets/logoPdf.svg?url";
 
 const LOGO_RENDER_WIDTH = 520;
 

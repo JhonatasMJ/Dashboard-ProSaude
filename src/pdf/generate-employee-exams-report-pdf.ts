@@ -22,11 +22,32 @@ const TABLE_HEAD = [
   "Valor exame",
 ] as const;
 
+const COLUMN_WIDTH_RATIOS = [0.09, 0.07, 0.2, 0.17, 0.17, 0.18, 0.12] as const;
+
 const LOGO_DISPLAY = { width: 22, height: 18.6 };
 
 function buildReportFilename(generatedAt: Date): string {
   const stamp = format(generatedAt, "yyyy-MM-dd-HHmm");
   return `relatorio-vinculos-${stamp}.pdf`;
+}
+
+function getContentWidth(doc: jsPDF): number {
+  return doc.internal.pageSize.getWidth() - PDF_LAYOUT.marginX * 2;
+}
+
+function getColumnStyles(tableWidth: number) {
+  return Object.fromEntries(
+    COLUMN_WIDTH_RATIOS.map((ratio, index) => [
+      index,
+      {
+        cellWidth: tableWidth * ratio,
+        ...(index === 1 ? { halign: "center" as const } : {}),
+        ...(index === 6
+          ? { halign: "right" as const, fontStyle: "bold" as const }
+          : {}),
+      },
+    ])
+  );
 }
 
 function mapLinkToRow(link: IEmployeeExam): string[] {
@@ -85,6 +106,36 @@ function drawReportHeader(doc: jsPDF, logoDataUrl: string) {
   doc.rect(0, PDF_LAYOUT.headerHeight, pageWidth, PDF_LAYOUT.accentHeight, "F");
 }
 
+function drawOutlinedCard(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  setRgb(doc, PDF_BRAND.surface);
+  setRgb(doc, PDF_BRAND.border, "draw");
+  doc.setLineWidth(0.25);
+  doc.roundedRect(x, y, width, height, 2, 2, "FD");
+}
+
+function drawSectionTitle(
+  doc: jsPDF,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  title: string,
+  fill: readonly [number, number, number]
+) {
+  setRgb(doc, fill);
+  doc.rect(x, y, width, height, "F");
+  setRgb(doc, PDF_BRAND.secondary, "text");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.text(title, x + 5, y + 4.8);
+}
+
 function drawInfoSection(
   doc: jsPDF,
   generatedAt: Date,
@@ -92,81 +143,92 @@ function drawInfoSection(
   totalValue: number,
   filterSummary: string[]
 ): number {
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const contentWidth = pageWidth - PDF_LAYOUT.marginX * 2;
-  const gap = 5;
-  const boxY = PDF_LAYOUT.headerHeight + PDF_LAYOUT.accentHeight + 8;
-  const boxH = 30;
-  const colWidth = (contentWidth - gap) / 2;
+  const contentWidth = getContentWidth(doc);
+  const boxX = PDF_LAYOUT.marginX;
+  let cursorY = PDF_LAYOUT.headerHeight + PDF_LAYOUT.accentHeight + 8;
+  const innerPadding = 5;
+  const textWidth = contentWidth - innerPadding * 2;
 
-  const drawBox = (
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    fill: readonly [number, number, number]
-  ) => {
-    setRgb(doc, fill);
-    setRgb(doc, PDF_BRAND.border, "draw");
-    doc.setLineWidth(0.2);
-    doc.roundedRect(x, y, width, height, 2, 2, "FD");
-  };
+  const titleBandH = 7;
+  const resumoBodyH = 14;
+  const resumoCardH = titleBandH + resumoBodyH;
 
-  drawBox(PDF_LAYOUT.marginX, boxY, colWidth, boxH, PDF_BRAND.primaryLight);
-
-  let textY = boxY + 7;
-  const leftX = PDF_LAYOUT.marginX + 4;
-
-  setRgb(doc, PDF_BRAND.secondary, "text");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text("Resumo", leftX, textY);
-
-  textY += 5;
-  setRgb(doc, PDF_BRAND.text, "text");
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.text(
-    `Gerado em ${format(generatedAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`,
-    leftX,
-    textY
+  drawOutlinedCard(doc, boxX, cursorY, contentWidth, resumoCardH);
+  drawSectionTitle(
+    doc,
+    boxX,
+    cursorY,
+    contentWidth,
+    titleBandH,
+    "Resumo do relatório",
+    PDF_BRAND.primaryLight
   );
 
-  textY += 4.5;
-  doc.text(`Registros: ${totalRecords}`, leftX, textY);
+  const kpiY = cursorY + titleBandH + 5;
+  const kpiCenters = [
+    boxX + contentWidth * 0.17,
+    boxX + contentWidth * 0.5,
+    boxX + contentWidth * 0.83,
+  ];
 
-  textY += 4.5;
-  doc.setFont("helvetica", "bold");
-  setRgb(doc, PDF_BRAND.primary, "text");
-  doc.text(`Total: ${formatCurrency(totalValue)}`, leftX, textY);
+  const kpiItems = [
+    {
+      label: "Gerado em",
+      value: format(generatedAt, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }),
+      emphasize: false,
+    },
+    { label: "Registros", value: String(totalRecords), emphasize: false },
+    {
+      label: "Total dos exames",
+      value: formatCurrency(totalValue),
+      emphasize: true,
+    },
+  ];
 
-  const filtersX = PDF_LAYOUT.marginX + colWidth + gap;
-  drawBox(filtersX, boxY, colWidth, boxH, PDF_BRAND.surface);
+  kpiItems.forEach((item, index) => {
+    const centerX = kpiCenters[index];
 
-  textY = boxY + 7;
-  const filtersTextX = filtersX + 4;
-  const filtersMaxWidth = colWidth - 8;
+    setRgb(doc, PDF_BRAND.textMuted, "text");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.text(item.label, centerX, kpiY, { align: "center" });
 
-  setRgb(doc, PDF_BRAND.secondary, "text");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.text("Filtros aplicados", filtersTextX, textY);
+    setRgb(doc, item.emphasize ? PDF_BRAND.primary : PDF_BRAND.text, "text");
+    doc.setFont("helvetica", item.emphasize ? "bold" : "normal");
+    doc.setFontSize(item.emphasize ? 9.5 : 8.5);
+    doc.text(item.value, centerX, kpiY + 5, { align: "center" });
+  });
 
-  textY += 5;
-  setRgb(doc, PDF_BRAND.textMuted, "text");
+  cursorY += resumoCardH + 4;
+
+  const filterLines = filterSummary.flatMap((line) =>
+    doc.splitTextToSize(line, textWidth)
+  );
+  const filtersBodyH = Math.max(filterLines.length * 4.2, 5);
+  const filtersCardH = titleBandH + filtersBodyH + innerPadding;
+
+  drawOutlinedCard(doc, boxX, cursorY, contentWidth, filtersCardH);
+  drawSectionTitle(
+    doc,
+    boxX,
+    cursorY,
+    contentWidth,
+    titleBandH,
+    "Filtros aplicados",
+    PDF_BRAND.secondaryLight
+  );
+
+  let filterTextY = cursorY + titleBandH + 5;
+  setRgb(doc, PDF_BRAND.text, "text");
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
 
-  filterSummary.forEach((line) => {
-    const wrapped = doc.splitTextToSize(`• ${line}`, filtersMaxWidth);
-    wrapped.forEach((part: string) => {
-      if (textY > boxY + boxH - 3) return;
-      doc.text(part, filtersTextX, textY);
-      textY += 3.8;
-    });
+  filterLines.forEach((line) => {
+    doc.text(line, boxX + innerPadding, filterTextY);
+    filterTextY += 4.2;
   });
 
-  return boxY + boxH + 8;
+  return cursorY + filtersCardH + 6;
 }
 
 function drawCompactHeader(doc: jsPDF, logoDataUrl: string) {
@@ -224,6 +286,7 @@ export async function generateEmployeeExamsReportPdf(
   const generatedAt = options.generatedAt ?? new Date();
   const logoDataUrl = await loadLogoForPdf();
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const tableWidth = getContentWidth(doc);
   const totalExamValue = links.reduce((sum, link) => sum + link.exam.price, 0);
 
   drawReportHeader(doc, logoDataUrl);
@@ -237,6 +300,7 @@ export async function generateEmployeeExamsReportPdf(
 
   autoTable(doc, {
     startY: tableStartY,
+    tableWidth,
     head: [TABLE_HEAD as unknown as string[]],
     body: links.map(mapLinkToRow),
     margin: {
@@ -265,15 +329,7 @@ export async function generateEmployeeExamsReportPdf(
     alternateRowStyles: {
       fillColor: PDF_BRAND.surface,
     },
-    columnStyles: {
-      0: { cellWidth: 22 },
-      1: { cellWidth: 14, halign: "center" },
-      2: { cellWidth: 42 },
-      3: { cellWidth: 38 },
-      4: { cellWidth: 38 },
-      5: { cellWidth: 42 },
-      6: { cellWidth: 28, halign: "right", fontStyle: "bold" },
-    },
+    columnStyles: getColumnStyles(tableWidth),
     foot: [
       ["", "", "", "", "", "Total geral", formatCurrency(totalExamValue)],
     ],
