@@ -3,17 +3,26 @@ import { useMemo, type ReactNode } from "react";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { CurrencyInputLabel } from "@/components/currency-input-label";
 import { InputLabel } from "@/components/input-label";
+import { SelectLabel } from "@/components/select-label";
 import { Button } from "@/components/ui/button";
 import { examSchema } from "@/schemas/exam.schema";
+import {
+  ALL_COMPANIES_EXAM_VALUE,
+  isAllCompaniesExamSelection,
+} from "@/shared/constants/exam.constants";
 import { formatExamProfitLabel } from "@/shared/helpers/exam-financials.helper";
 import { examToFormValues } from "@/shared/helpers/exam-form.helper";
-import { parsePriceInputToNumber } from "@/shared/helpers/currency-input.helper";
+import {
+  extractPriceDigits,
+  parsePriceInputToNumber,
+} from "@/shared/helpers/currency-input.helper";
 import type { IExam } from "@/shared/interfaces/https/exam";
 import type { ExamFormData } from "@/types/exam-form.types";
 import { cn } from "@/lib/utils";
 
 interface ExamFormProps {
   defaultValues?: IExam;
+  companies: { id: string; name: string }[];
   isSubmitting?: boolean;
   submitLabel: string;
   formId?: string;
@@ -23,6 +32,7 @@ interface ExamFormProps {
 }
 
 const emptyValues: ExamFormData = {
+  companyId: "",
   name: "",
   price: "",
   cost: "",
@@ -53,6 +63,7 @@ function FormSection({
 
 export function ExamForm({
   defaultValues,
+  companies,
   isSubmitting = false,
   submitLabel,
   formId = "exam-form",
@@ -61,20 +72,45 @@ export function ExamForm({
   onCancel,
 }: ExamFormProps) {
   const isSheet = variant === "sheet";
+  const isEditing = !!defaultValues;
+
+  const companyOptions = useMemo(() => {
+    const options = companies.map((company) => ({
+      value: company.id,
+      label: company.name,
+    }));
+
+    return [
+      {
+        value: ALL_COMPANIES_EXAM_VALUE,
+        label: "Todas as empresas (mesmo exame)",
+      },
+      ...options,
+    ];
+  }, [companies]);
 
   const { control, handleSubmit } = useForm<ExamFormData>({
     resolver: yupResolver(examSchema) as Resolver<ExamFormData>,
     defaultValues: defaultValues ? examToFormValues(defaultValues) : emptyValues,
   });
 
+  const companyIdValue = useWatch({ control, name: "companyId" });
   const priceValue = useWatch({ control, name: "price" });
   const costValue = useWatch({ control, name: "cost" });
 
+  const isAllCompaniesSelected = isAllCompaniesExamSelection(
+    companyIdValue ?? ""
+  );
+
   const profitHint = useMemo(() => {
     const price = parsePriceInputToNumber(priceValue);
-    const cost = parsePriceInputToNumber(costValue);
+    if (Number.isNaN(price) || price <= 0) {
+      return null;
+    }
 
-    if (Number.isNaN(price) || Number.isNaN(cost) || price <= 0 || cost <= 0) {
+    const costDigits = extractPriceDigits(costValue ?? "");
+    const cost = costDigits ? parsePriceInputToNumber(costValue) : 0;
+    if (Number.isNaN(cost)) {
       return null;
     }
 
@@ -90,8 +126,37 @@ export function ExamForm({
     >
       <FormSection
         title="Dados do exame"
-        description="Catálogo global de exames com preço e custo."
+        description={
+          isEditing
+            ? "Altere a empresa, valores e demais informações deste exame."
+            : "Vincule a uma empresa ou cadastre o mesmo exame para todas de uma vez."
+        }
       >
+        <SelectLabel
+          control={control}
+          name="companyId"
+          label="Empresa"
+          options={companyOptions}
+          placeholder={
+            companies.length === 0
+              ? "Nenhuma empresa cadastrada"
+              : "Selecione a empresa"
+          }
+          disabled={companies.length === 0 || isSubmitting}
+        />
+
+        {isAllCompaniesSelected && (
+          <p className="rounded-md border border-border/80 bg-muted/20 px-3.5 py-2.5 text-xs text-muted-foreground">
+            {isEditing
+              ? "As alterações serão aplicadas a todos os exames com o mesmo nome em"
+              : "O exame será cadastrado com os mesmos dados para"}{" "}
+            <span className="font-medium text-foreground">
+              {companies.length} empresas
+            </span>
+            .
+          </p>
+        )}
+
         <InputLabel
           control={control}
           name="name"
@@ -112,7 +177,7 @@ export function ExamForm({
             control={control}
             name="cost"
             label="Custo (valor pago)"
-            placeholder="0,00"
+            placeholder="0,00 (opcional)"
             disabled={isSubmitting}
           />
           {profitHint && (

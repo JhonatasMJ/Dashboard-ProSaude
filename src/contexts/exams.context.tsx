@@ -8,12 +8,17 @@ import {
 import { ExamsContext, type ExamsContextValue } from "@/contexts/exams-context";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
+  BULK_LIST_PAGE_SIZE,
   FILTER_DEBOUNCE_MS,
   TABLE_PAGE_SIZE,
 } from "@/shared/constants/app.constants";
+import type { ICompany } from "@/shared/interfaces/https/company";
+import { companyService } from "@/shared/services/company.service";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
+import { isAllCompaniesExamSelection } from "@/shared/constants/exam.constants";
 import {
   formToExamCreatePayload,
+  formToExamCreatePayloads,
   formToExamUpdatePayload,
 } from "@/shared/helpers/exam-form.helper";
 import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
@@ -27,12 +32,15 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     useRequestGeneration();
   const [exams, setExams] = useState<IExam[]>([]);
   const [meta, setMeta] = useState<IPaginationMeta | null>(null);
+  const [companies, setCompanies] = useState<ICompany[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingFilters, setIsLoadingFilters] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [nameFilter, setNameFilter] = useState("");
   const [debouncedName, setDebouncedName] = useState("");
+  const [companyIdFilter, setCompanyIdFilter] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -42,6 +50,36 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
 
     return () => window.clearTimeout(timer);
   }, [nameFilter]);
+
+  const handleCompanyFilterChange = useCallback((value: string) => {
+    setCompanyIdFilter(value);
+    setPage(1);
+    setIsLoading(true);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    companyService
+      .list({ page: 1, pageSize: BULK_LIST_PAGE_SIZE })
+      .then((response) => {
+        if (!active) return;
+        setCompanies(response.data);
+      })
+      .catch(() => {
+        if (!active) return;
+        setCompanies([]);
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingFilters(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const fetchExams = useCallback(
     async (showLoading = false) => {
@@ -57,6 +95,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
           page,
           pageSize: TABLE_PAGE_SIZE,
           ...(debouncedName ? { name: debouncedName } : {}),
+          ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
         });
 
         if (isStaleRequest(requestId)) return;
@@ -77,7 +116,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [page, debouncedName, startRequest, isStaleRequest]
+    [page, debouncedName, companyIdFilter, startRequest, isStaleRequest]
   );
 
   useEffect(() => {
@@ -92,6 +131,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
         page,
         pageSize: TABLE_PAGE_SIZE,
         ...(debouncedName ? { name: debouncedName } : {}),
+        ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
       })
       .then((response) => {
         if (!active || isStaleRequest(requestId)) return;
@@ -116,13 +156,26 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [page, debouncedName, startRequest, isStaleRequest]);
+  }, [page, debouncedName, companyIdFilter, startRequest, isStaleRequest]);
 
   const createExam = useCallback(
     async (formData: ExamFormData) => {
       setIsSubmitting(true);
       try {
-        await examService.create(formToExamCreatePayload(formData));
+        if (isAllCompaniesExamSelection(formData.companyId)) {
+          const payloads = formToExamCreatePayloads(
+            formData,
+            companies.map((company) => company.id)
+          );
+          await Promise.all(
+            payloads.map((payload) => examService.create(payload))
+          );
+        } else {
+          await examService.create(
+            formToExamCreatePayload(formData, formData.companyId)
+          );
+        }
+
         invalidateRequests();
         if (page === 1) {
           await fetchExams();
@@ -133,14 +186,33 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
         setIsSubmitting(false);
       }
     },
-    [page, fetchExams, invalidateRequests]
+    [page, companies, fetchExams, invalidateRequests]
   );
 
   const updateExam = useCallback(
     async (id: string, formData: ExamFormData) => {
       setIsSubmitting(true);
       try {
-        await examService.update(id, formToExamUpdatePayload(formData));
+        const payload = formToExamUpdatePayload(formData);
+
+        if (isAllCompaniesExamSelection(formData.companyId)) {
+          const normalizedName = formData.name.trim().toLowerCase();
+          const listResponse = await examService.list({
+            page: 1,
+            pageSize: BULK_LIST_PAGE_SIZE,
+            name: formData.name.trim(),
+          });
+          const targets = listResponse.data.filter(
+            (item) => item.name.trim().toLowerCase() === normalizedName
+          );
+
+          await Promise.all(
+            targets.map((item) => examService.update(item.id, payload))
+          );
+        } else {
+          await examService.update(id, payload);
+        }
+
         invalidateRequests();
         await fetchExams();
       } finally {
@@ -182,12 +254,16 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     () => ({
       exams,
       meta,
+      companies,
       isLoading,
+      isLoadingFilters,
       isSubmitting,
       error,
       nameFilter,
+      companyIdFilter,
       page,
       setNameFilter,
+      setCompanyIdFilter: handleCompanyFilterChange,
       setPage,
       refetch: () => fetchExams(true),
       createExam,
@@ -197,11 +273,15 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     [
       exams,
       meta,
+      companies,
       isLoading,
+      isLoadingFilters,
       isSubmitting,
       error,
       nameFilter,
+      companyIdFilter,
       page,
+      handleCompanyFilterChange,
       fetchExams,
       createExam,
       updateExam,

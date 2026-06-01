@@ -18,14 +18,14 @@ export function companyToFormValues(company: ICompany): CompanyFormData {
 
 export function formToCompanyPayload(data: CompanyFormData): ICompanyPayload {
   return {
-    name: data.name,
-    taxId: data.taxId,
-    email: data.email,
-    phone: data.phone,
-    street: data.street,
-    number: data.number,
-    neighborhood: data.neighborhood,
-    city: data.city,
-    state: data.state.toUpperCase(),
+    name: data.name.trim(),
+    taxId: data.taxId.trim(),
+    email: data.email?.trim() ?? "",
+    phone: data.phone?.trim() ?? "",
+    street: data.street?.trim() ?? "",
+    number: data.number?.trim() ?? "",
+    neighborhood: data.neighborhood?.trim() ?? "",
+    city: data.city?.trim() ?? "",
+    state: data.state?.trim() ? data.state.trim().toUpperCase() : "",
   };
 }

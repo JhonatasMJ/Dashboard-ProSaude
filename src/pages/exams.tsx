@@ -9,7 +9,7 @@ export default function ExamsPage() {
           <span className="text-primary">.</span>
         </h1>
         <p className="max-w-xl text-muted-foreground">
-          Gerencie o catálogo global de exames, com preço, custo e lucro.
+          Cadastre exames por empresa, com preço, custo e lucro próprios.
         </p>
       </header>
 

@@ -50,8 +50,24 @@ function buildPeriodComparison(financial: IDashboardFinancial) {
   }));
 }
 
-function buildMonthComposition(financial: IDashboardFinancial) {
-  const { revenue, cost, profit } = financial.thisMonth;
+function resolveCompositionPeriod(financial: IDashboardFinancial) {
+  if (financial.thisMonth.employeeExamCount > 0) {
+    return {
+      label: "Mês atual",
+      period: financial.thisMonth,
+    };
+  }
+
+  return {
+    label: "Todo o período",
+    period: financial.allTime,
+  };
+}
+
+function buildComposition(financial: IDashboardFinancial) {
+  const { period } = resolveCompositionPeriod(financial);
+  const { revenue, cost, profit } = period;
+
   return [
     { name: "Receita", value: Math.max(revenue, 0), color: DASHBOARD_CHART.revenue },
     { name: "Custo", value: Math.max(cost, 0), color: DASHBOARD_CHART.cost },
@@ -90,7 +106,8 @@ export function SummaryFinancialSection({
   if (!financial) return null;
 
   const comparisonData = buildPeriodComparison(financial);
-  const compositionData = buildMonthComposition(financial);
+  const compositionData = buildComposition(financial);
+  const compositionLabel = resolveCompositionPeriod(financial).label;
 
   return (
     <div className="grid gap-4 lg:grid-cols-12">
@@ -188,15 +205,15 @@ export function SummaryFinancialSection({
 
         <Card className="col-span-12 gap-0 overflow-hidden rounded-md border border-border bg-white py-0 shadow-none lg:col-span-4">
           <div className="border-b border-border/60 px-5 py-4">
-            <h3 className="font-semibold text-foreground">Mês atual</h3>
+            <h3 className="font-semibold text-foreground">{compositionLabel}</h3>
             <p className="text-sm text-muted-foreground">
-              Distribuição receita, custo e lucro
+              Distribuição de receita, custo e lucro
             </p>
           </div>
           <div className="flex h-[300px] flex-col items-center justify-center px-4 py-4">
             {compositionData.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Sem movimentação no mês.
+                Sem movimentação financeira registrada.
               </p>
             ) : (
               <ResponsiveContainer width="100%" height="100%">

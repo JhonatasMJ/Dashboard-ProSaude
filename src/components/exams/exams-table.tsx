@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ButtonAnimatedIcon } from "@/components/button-animated-icon";
+import { CompanyFilterSelect } from "@/components/exams/company-filter-select";
 import { ExamFormSheet } from "@/components/exams/exam-form-sheet";
 import { DeleteModal } from "@/components/delete-modal";
 import { Button } from "@/components/ui/button";
@@ -72,10 +73,13 @@ function ExamRow({
       <TableCell className="px-5 py-4">
         <p className="truncate font-medium text-foreground">{exam.name}</p>
       </TableCell>
-      <TableCell className="hidden px-5 py-4 text-sm font-medium text-foreground md:table-cell">
+      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground md:table-cell">
+        {exam.company.name}
+      </TableCell>
+      <TableCell className="hidden px-5 py-4 text-sm font-medium text-foreground lg:table-cell">
         {formatCurrency(exam.price)}
       </TableCell>
-      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground lg:table-cell">
+      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground xl:table-cell">
         {formatCurrency(exam.cost)}
       </TableCell>
       <TableCell
@@ -137,7 +141,11 @@ export function ExamsTable() {
     deleteExam,
     isSubmitting,
     nameFilter,
+    companyIdFilter,
+    companies,
+    isLoadingFilters,
     setNameFilter,
+    setCompanyIdFilter,
     setPage,
   } = useExams();
 
@@ -148,9 +156,10 @@ export function ExamsTable() {
   const plusIconEmpty = useButtonAnimatedIcon();
 
   const totalCount = meta?.total ?? 0;
-  const hasActiveFilters = nameFilter.trim().length > 0;
+  const hasActiveFilters =
+    nameFilter.trim().length > 0 || companyIdFilter.length > 0;
   const isEmptyList = !isLoading && !error && exams.length === 0;
-  const canCreate = true;
+  const canCreate = companies.length > 0;
 
   const openCreate = () => {
     setEditingExam(null);
@@ -191,7 +200,7 @@ export function ExamsTable() {
             <div>
               <h2 className="font-semibold text-foreground">Exames</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Catálogo global de exames.
+                Exames por empresa, com preços e custos próprios.
                 {!isLoading && !error && meta && (
                   <>
                     {" "}
@@ -207,7 +216,7 @@ export function ExamsTable() {
               className="shrink-0 rounded-md py-4.5"
               size="lg"
               onClick={openCreate}
-              disabled={isLoading}
+              disabled={isLoading || !canCreate}
               {...plusIconHeader.rowHandlers}
             >
               <ButtonAnimatedIcon
@@ -220,6 +229,13 @@ export function ExamsTable() {
           </div>
 
           <div className="flex flex-col gap-2.5 lg:flex-row">
+            <CompanyFilterSelect
+              className="lg:w-72 lg:shrink-0"
+              value={companyIdFilter}
+              onChange={setCompanyIdFilter}
+              companies={companies}
+              disabled={isLoadingFilters}
+            />
             <div className="flex min-w-0 flex-1 flex-col gap-2.5">
               <label
                 htmlFor="exam-name-filter"
@@ -239,7 +255,6 @@ export function ExamsTable() {
                 />
               </div>
             </div>
-
           </div>
         </div>
 
@@ -266,7 +281,9 @@ export function ExamsTable() {
                 Nenhum exame cadastrado
               </p>
               <p className="max-w-sm text-sm text-muted-foreground">
-                Comece adicionando o primeiro exame ao catálogo.
+                {companies.length === 0
+                  ? "Cadastre uma empresa antes de incluir exames."
+                  : "Comece adicionando o primeiro exame."}
               </p>
             </div>
             {canCreate && (
@@ -306,9 +323,12 @@ export function ExamsTable() {
                     Exame
                   </TableHead>
                   <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase md:table-cell">
-                    Preço
+                    Empresa
                   </TableHead>
                   <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase lg:table-cell">
+                    Preço
+                  </TableHead>
+                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase xl:table-cell">
                     Custo
                   </TableHead>
                   <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase 2xl:table-cell">

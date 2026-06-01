@@ -1,4 +1,4 @@
-import { Link2, TrendingUp, Users, Wallet } from "lucide-react";
+import { Link2, Receipt, TrendingUp, Users, Wallet } from "lucide-react";
 import {
   SummaryStatCard,
   SummaryStatCardSkeleton,
@@ -15,7 +15,7 @@ interface DashboardKpiRowProps {
   isLoading?: boolean;
 }
 
-const KPI_SKELETON_COUNT = 4;
+const KPI_SKELETON_COUNT = 5;
 
 export function DashboardKpiRow({
   totals,
@@ -34,22 +34,34 @@ export function DashboardKpiRow({
 
   if (!totals || !financial) return null;
 
-  const { thisMonth } = financial;
+  const { allTime, thisMonth } = financial;
+
+  const monthActivityHint =
+    thisMonth.employeeExamCount > 0
+      ? ` · ${thisMonth.employeeExamCount} vínculo(s) neste mês`
+      : "";
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
       <SummaryStatCard
-        title="Lucro no mês"
-        description={`Margem ${thisMonth.marginPercent.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% · ${thisMonth.employeeExamCount} vínculos`}
-        value={thisMonth.profit}
+        title="Lucro"
+        description={`Margem ${allTime.marginPercent.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% · ${allTime.employeeExamCount} vínculo(s)${monthActivityHint}`}
+        value={allTime.profit}
         icon={TrendingUp}
         valueFormatter={formatCurrency}
       />
       <SummaryStatCard
-        title="Receita no mês"
-        description="Faturamento do período atual"
-        value={thisMonth.revenue}
+        title="Receita"
+        description={`Faturamento acumulado${monthActivityHint}`}
+        value={allTime.revenue}
         icon={Wallet}
+        valueFormatter={formatCurrency}
+      />
+      <SummaryStatCard
+        title="Custo"
+        description={`Despesas com exames${monthActivityHint}`}
+        value={allTime.cost}
+        icon={Receipt}
         valueFormatter={formatCurrency}
       />
       <SummaryStatCard
@@ -60,7 +72,7 @@ export function DashboardKpiRow({
       />
       <SummaryStatCard
         title="Vínculos"
-        description={`${totals.employeeExamsThisMonth} registrados neste mês`}
+        description={`${totals.employeeExamsThisMonth} registrados neste mês · ${totals.employeeExams} no total`}
         value={totals.employeeExams}
         icon={Link2}
       />

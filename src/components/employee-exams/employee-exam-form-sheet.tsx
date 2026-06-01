@@ -63,7 +63,7 @@ export function EmployeeExamFormSheet({
     }
   };
 
-  const canSubmit = employees.length > 0 && exams.length > 0;
+  const canSubmit = employees.length > 0;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

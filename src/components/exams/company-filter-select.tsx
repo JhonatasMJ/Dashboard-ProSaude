@@ -7,9 +7,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ALL_COMPANIES_FILTER_VALUE } from "@/shared/constants/exam.constants";
 import { cn } from "@/lib/utils";
 
-export const ALL_COMPANIES_FILTER_VALUE = "all";
+export { ALL_COMPANIES_FILTER_VALUE };
 
 const triggerClassName =
   "h-11! w-full min-w-0 justify-between rounded-md px-3.5 text-base shadow-none";

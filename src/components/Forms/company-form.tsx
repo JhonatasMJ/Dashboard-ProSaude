@@ -140,7 +140,7 @@ export function CompanyForm({
 
       <FormSection
         title="Contato"
-        description="Informações para comunicação com a empresa."
+        description="Opcional — preencha se desejar."
       >
         <InputLabel
           control={control}
@@ -160,7 +160,7 @@ export function CompanyForm({
 
       <FormSection
         title="Endereço"
-        description="Informe o CEP para preencher rua, bairro, cidade e UF automaticamente."
+        description="Opcional — informe o CEP para preencher rua, bairro, cidade e UF automaticamente."
       >
         <MaskedInputLabel
           control={control}

@@ -25,12 +25,35 @@ const priceFieldSchema = (label: string) =>
       }
     );
 
+const optionalCostFieldSchema = yup
+  .string()
+  .default("")
+  .test("valid-cost", "Informe um custo válido", (value) => {
+    if (!value?.trim()) return true;
+    return isValidPriceInput(value);
+  })
+  .test("max-cost", "O custo não pode ser negativo", (value) => {
+    if (!value?.trim()) return true;
+    const amount = parsePriceInputToNumber(value);
+    return !Number.isNaN(amount) && amount >= 0;
+  })
+  .test(
+    "max-cost-value",
+    `O valor máximo é R$ ${MAX_EXAM_PRICE.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+    (value) => {
+      if (!value?.trim()) return true;
+      const amount = parsePriceInputToNumber(value);
+      return !Number.isNaN(amount) && amount <= MAX_EXAM_PRICE;
+    }
+  );
+
 export const examSchema = yup.object({
+  companyId: yup.string().required("Empresa é obrigatória"),
   name: yup
     .string()
     .required("Nome do exame é obrigatório")
     .min(2, "Informe pelo menos 2 caracteres"),
   price: priceFieldSchema("Preço"),
-  cost: priceFieldSchema("Custo"),
+  cost: optionalCostFieldSchema,
   notes: yup.string().default(""),
 });

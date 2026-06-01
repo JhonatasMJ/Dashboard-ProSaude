@@ -1,6 +1,6 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useMemo, type ReactNode } from "react";
-import { Controller, useForm, type Resolver } from "react-hook-form";
+import { useEffect, useMemo, type ReactNode } from "react";
+import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
 import { InputLabel } from "@/components/input-label";
 import { MaskedInputLabel } from "@/components/masked-input-label";
 import { MultiSelectLabel } from "@/components/multi-select-label";
@@ -88,21 +88,60 @@ export function EmployeeExamForm({
     [employees]
   );
 
+  const { control, handleSubmit, setValue, getValues } =
+    useForm<EmployeeExamFormData>({
+      resolver: yupResolver(employeeExamSchema) as Resolver<EmployeeExamFormData>,
+      defaultValues: defaultValues
+        ? employeeExamToFormValues(defaultValues)
+        : emptyValues,
+    });
+
+  const employeeIdValue = useWatch({ control, name: "employeeId" });
+
+  const selectedEmployee = useMemo(
+    () => employees.find((employee) => employee.id === employeeIdValue),
+    [employees, employeeIdValue]
+  );
+
+  const examsForEmployee = useMemo(() => {
+    if (!selectedEmployee) {
+      return [];
+    }
+
+    return exams.filter(
+      (exam) => exam.company.id === selectedEmployee.company.id
+    );
+  }, [exams, selectedEmployee]);
+
+  useEffect(() => {
+    const validExamIds = new Set(examsForEmployee.map((exam) => exam.id));
+    const currentExamIds = getValues("examIds");
+
+    if (!currentExamIds.some((examId) => !validExamIds.has(examId))) {
+      return;
+    }
+
+    setValue(
+      "examIds",
+      currentExamIds.filter((examId) => validExamIds.has(examId)),
+      { shouldValidate: true }
+    );
+  }, [employeeIdValue, examsForEmployee, getValues, setValue]);
+
   const examOptions = useMemo(
     () =>
-      exams.map((exam) => ({
+      examsForEmployee.map((exam) => ({
         value: exam.id,
         label: exam.name,
       })),
-    [exams]
+    [examsForEmployee]
   );
 
-  const { control, handleSubmit } = useForm<EmployeeExamFormData>({
-    resolver: yupResolver(employeeExamSchema) as Resolver<EmployeeExamFormData>,
-    defaultValues: defaultValues
-      ? employeeExamToFormValues(defaultValues)
-      : emptyValues,
-  });
+  const examPlaceholder = !selectedEmployee
+    ? "Selecione o funcionário primeiro"
+    : examsForEmployee.length === 0
+      ? "Nenhum exame para esta empresa"
+      : "Selecione o(s) exame(s)";
 
   return (
     <form
@@ -147,7 +186,7 @@ export function EmployeeExamForm({
                     field.onChange(value ? [String(value)] : [])
                   }
                   items={examOptions}
-                  disabled={exams.length === 0 || isSubmitting}
+                  disabled={examsForEmployee.length === 0 || isSubmitting}
                 >
                   <SelectTrigger
                     id={`${formId}-exam`}
@@ -159,11 +198,7 @@ export function EmployeeExamForm({
                     )}
                   >
                     <SelectValue
-                      placeholder={
-                        exams.length === 0
-                          ? "Nenhum exame no catálogo"
-                          : "Selecione o exame"
-                      }
+                      placeholder={examPlaceholder}
                       className="truncate"
                     />
                   </SelectTrigger>
@@ -189,12 +224,8 @@ export function EmployeeExamForm({
             name="examIds"
             label="Exames (catálogo)"
             options={examOptions}
-            placeholder={
-              exams.length === 0
-                ? "Nenhum exame no catálogo"
-                : "Selecione os exames"
-            }
-            disabled={exams.length === 0 || isSubmitting}
+            placeholder={examPlaceholder}
+            disabled={examsForEmployee.length === 0 || isSubmitting}
           />
         )}
 
