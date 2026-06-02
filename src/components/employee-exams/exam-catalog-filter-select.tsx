@@ -1,18 +1,9 @@
 import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 
 export const ALL_EXAMS_FILTER_VALUE = "all";
-
-const triggerClassName =
-  "h-11! w-full min-w-0 justify-between rounded-md px-3.5 text-base shadow-none";
 
 interface ExamCatalogFilterSelectProps {
   value: string;
@@ -47,27 +38,17 @@ export function ExamCatalogFilterSelect({
       <Label htmlFor="link-exam-filter" className="text-sm">
         Exame
       </Label>
-      <Select
+      <SearchableSelect
+        id="link-exam-filter"
         value={selectValue}
         onValueChange={(next) =>
-          onChange(
-            next === ALL_EXAMS_FILTER_VALUE || !next ? "" : String(next)
-          )
+          onChange(next === ALL_EXAMS_FILTER_VALUE || !next ? "" : String(next))
         }
-        items={items}
+        options={items}
+        placeholder="Todos os exames"
+        searchPlaceholder="Buscar exame..."
         disabled={disabled}
-      >
-        <SelectTrigger id="link-exam-filter" className={triggerClassName}>
-          <SelectValue placeholder="Todos os exames" className="truncate" />
-        </SelectTrigger>
-        <SelectContent align="start">
-          {items.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              <span className="block truncate">{item.label}</span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      />
     </div>
   );
 }

@@ -1,18 +1,9 @@
 import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 
 export const ALL_EMPLOYEES_FILTER_VALUE = "all";
-
-const triggerClassName =
-  "h-11! w-full min-w-0 justify-between rounded-md px-3.5 text-base shadow-none";
 
 interface EmployeeFilterSelectProps {
   value: string;
@@ -47,27 +38,19 @@ export function EmployeeFilterSelect({
       <Label htmlFor="link-employee-filter" className="text-sm">
         Funcionário
       </Label>
-      <Select
+      <SearchableSelect
+        id="link-employee-filter"
         value={selectValue}
         onValueChange={(next) =>
           onChange(
             next === ALL_EMPLOYEES_FILTER_VALUE || !next ? "" : String(next)
           )
         }
-        items={items}
+        options={items}
+        placeholder="Todos os funcionários"
+        searchPlaceholder="Buscar funcionário..."
         disabled={disabled}
-      >
-        <SelectTrigger id="link-employee-filter" className={triggerClassName}>
-          <SelectValue placeholder="Todos os funcionários" className="truncate" />
-        </SelectTrigger>
-        <SelectContent align="start">
-          {items.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              <span className="block truncate">{item.label}</span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      />
     </div>
   );
 }

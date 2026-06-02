@@ -7,13 +7,7 @@ import { MultiSelectLabel } from "@/components/multi-select-label";
 import { SelectLabel } from "@/components/select-label";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { employeeExamSchema } from "@/schemas/employee-exam.schema";
 import { employeeExamToFormValues } from "@/shared/helpers/employee-exam-form.helper";
 import { birthDateMask, examTimeMask } from "@/shared/helpers/input-masks.helper";
@@ -180,36 +174,18 @@ export function EmployeeExamForm({
                 <Label htmlFor={`${formId}-exam`} className="text-sm">
                   Exame (catálogo)
                 </Label>
-                <Select
+                <SearchableSelect
+                  id={`${formId}-exam`}
                   value={field.value[0] || null}
-                  onValueChange={(value) =>
-                    field.onChange(value ? [String(value)] : [])
+                  onValueChange={(next) =>
+                    field.onChange(next ? [String(next)] : [])
                   }
-                  items={examOptions}
+                  options={examOptions}
+                  placeholder={examPlaceholder}
+                  searchPlaceholder="Buscar exame..."
                   disabled={examsForEmployee.length === 0 || isSubmitting}
-                >
-                  <SelectTrigger
-                    id={`${formId}-exam`}
-                    aria-invalid={!!fieldState.error}
-                    className={cn(
-                      "h-11! w-full min-w-0 justify-between rounded-md px-3.5 text-base shadow-none",
-                      fieldState.error &&
-                        "border-destructive ring-3 ring-destructive/20"
-                    )}
-                  >
-                    <SelectValue
-                      placeholder={examPlaceholder}
-                      className="truncate"
-                    />
-                  </SelectTrigger>
-                  <SelectContent align="start">
-                    {examOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <span className="block truncate">{option.label}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  aria-invalid={!!fieldState.error}
+                />
                 {fieldState.error?.message && (
                   <p className="text-sm text-destructive">
                     {fieldState.error.message}
