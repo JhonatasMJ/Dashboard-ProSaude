@@ -1,6 +1,11 @@
 import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import {
+  FILTER_FIELD_LABEL_CLASS,
+  FILTER_FIELD_WRAPPER_CLASS,
+  FILTER_SEARCHABLE_SELECT_CLASS,
+} from "@/shared/constants/filter-field.constants";
 import { cn } from "@/lib/utils";
 
 export const ALL_EXAMS_FILTER_VALUE = "all";
@@ -34,8 +39,8 @@ export function ExamCatalogFilterSelect({
   const selectValue = value || ALL_EXAMS_FILTER_VALUE;
 
   return (
-    <div className={cn("flex w-full flex-col gap-2.5", className)}>
-      <Label htmlFor="link-exam-filter" className="text-sm">
+    <div className={cn(FILTER_FIELD_WRAPPER_CLASS, className)}>
+      <Label htmlFor="link-exam-filter" className={FILTER_FIELD_LABEL_CLASS}>
         Exame
       </Label>
       <SearchableSelect
@@ -48,6 +53,7 @@ export function ExamCatalogFilterSelect({
         placeholder="Todos os exames"
         searchPlaceholder="Buscar exame..."
         disabled={disabled}
+        className={FILTER_SEARCHABLE_SELECT_CLASS}
       />
     </div>
   );

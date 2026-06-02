@@ -24,6 +24,11 @@ import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
 import { useEmployees } from "@/contexts/employees-context";
 import { cn } from "@/lib/utils";
 import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
+import {
+  FILTER_FIELD_LABEL_CLASS,
+  FILTER_FIELD_WRAPPER_CLASS,
+  FILTER_INPUT_CLASS,
+} from "@/shared/constants/filter-field.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatCpf } from "@/shared/helpers/cpf.helper";
 import { formatAgeFromBirthDate, formatDateBr } from "@/shared/helpers/date.helper";
@@ -240,22 +245,22 @@ export function EmployeesTable() {
           </div>
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
-            <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+            <div className={cn(FILTER_FIELD_WRAPPER_CLASS, "min-w-0 flex-1")}>
               <label
                 htmlFor="employee-name-filter"
-                className="text-sm font-medium text-foreground"
+                className={FILTER_FIELD_LABEL_CLASS}
               >
                 Buscar funcionário
               </label>
               <div className="relative">
-                <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="employee-name-filter"
                   type="search"
                   placeholder="Nome do funcionário..."
                   value={nameFilter}
                   onChange={(e) => setNameFilter(e.target.value)}
-                  className="h-11 rounded-md pl-10"
+                  className={FILTER_INPUT_CLASS}
                 />
               </div>
             </div>
@@ -265,7 +270,7 @@ export function EmployeesTable() {
               onChange={setCompanyIdFilter}
               companies={companies}
               disabled={isLoadingFilters}
-              className="w-full lg:w-64 lg:shrink-0"
+              className="w-full lg:w-56 lg:shrink-0"
             />
 
           </div>

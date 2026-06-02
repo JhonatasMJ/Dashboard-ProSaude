@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/auth.context";
 import { useUsers } from "@/contexts/users-context";
 import { cn } from "@/lib/utils";
 import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
+import { FILTER_INPUT_CLASS } from "@/shared/constants/filter-field.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatDateBr } from "@/shared/helpers/date.helper";
 import { formatUserRole } from "@/shared/helpers/user-role.helper";
@@ -190,13 +191,13 @@ export function UsersTable() {
           </div>
 
           <div className="relative max-w-full">
-            <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Buscar por nome..."
               value={nameFilter}
               onChange={(e) => setNameFilter(e.target.value)}
-              className="h-10 rounded-md pl-10"
+              className={FILTER_INPUT_CLASS}
               aria-label="Buscar usuário por nome"
             />
           </div>

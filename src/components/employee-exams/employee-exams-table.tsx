@@ -1,10 +1,12 @@
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PaymentStatusBadge } from "@/components/payment-status-badge";
 import { ButtonAnimatedIcon } from "@/components/button-animated-icon";
 import { EmployeeExamFormSheet } from "@/components/employee-exams/employee-exam-form-sheet";
 import { EmployeeFilterSelect } from "@/components/employee-exams/employee-filter-select";
 import { ExamCatalogFilterSelect } from "@/components/employee-exams/exam-catalog-filter-select";
+import { PaymentStatusFilterSelect } from "@/components/employee-exams/payment-status-filter-select";
 import { CompanyFilterSelect } from "@/components/exams/company-filter-select";
 import { DeleteModal } from "@/components/delete-modal";
 import { Button } from "@/components/ui/button";
@@ -33,10 +35,21 @@ import {
 } from "@/pdf";
 import { cn } from "@/lib/utils";
 import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
+import {
+  FILTER_FIELD_LABEL_CLASS,
+  FILTER_FIELD_WRAPPER_CLASS,
+  FILTER_GRID_CLASS,
+  FILTER_GRID_ITEM_CLASS,
+  FILTER_INPUT_CLASS,
+} from "@/shared/constants/filter-field.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatDateBr } from "@/shared/helpers/date.helper";
 import { formatCurrency } from "@/shared/helpers/format-currency.helper";
+import { truncateText } from "@/shared/helpers/truncate-text.helper";
 import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
+
+const COMPACT_CELL = "px-3 py-2.5";
+const COMPANY_MAX_LENGTH = 22;
 
 function EmployeeExamsTableSkeleton() {
   return (
@@ -80,46 +93,60 @@ function LinkRow({
           : "bg-muted/30 hover:bg-muted/50"
       )}
     >
-      <TableCell className="px-5 py-4">
-        <p className="truncate font-medium text-foreground">
+      <TableCell className={COMPACT_CELL}>
+        <PaymentStatusBadge status={link.paymentStatus ?? "PENDING"} />
+      </TableCell>
+      <TableCell className={cn(COMPACT_CELL, "whitespace-nowrap text-xs text-muted-foreground")}>
+        {link.paidAt ? formatDateBr(link.paidAt) : "—"}
+      </TableCell>
+      <TableCell className={cn(COMPACT_CELL, "max-w-[140px]")}>
+        <p className="truncate text-sm font-medium text-foreground">
           {link.employee.name}
         </p>
+        <p
+          className="truncate text-xs text-muted-foreground"
+          title={link.employee.company.name}
+        >
+          {truncateText(link.employee.company.name, COMPANY_MAX_LENGTH)}
+        </p>
       </TableCell>
-      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground md:table-cell">
-        {link.employee.company.name}
-      </TableCell>
-      <TableCell className="hidden px-5 py-4 lg:table-cell">
-        <p className="truncate text-sm font-medium text-foreground">
+      <TableCell className={cn(COMPACT_CELL, "hidden max-w-[160px] sm:table-cell")}>
+        <p className="truncate text-sm text-foreground" title={link.exam.name}>
           {link.exam.name}
         </p>
         <p className="text-xs text-muted-foreground">
           {formatCurrency(link.exam.price)}
         </p>
       </TableCell>
-      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground xl:table-cell">
-        {link.professionalName}
-      </TableCell>
-      <TableCell className="hidden px-5 py-4 text-sm text-foreground xl:table-cell">
-        <span className="whitespace-nowrap">
-          {formatDateBr(link.examDate)}
-          <span className="mx-1.5 text-muted-foreground">·</span>
-          {link.examTime}
-        </span>
+      <TableCell className={cn(COMPACT_CELL, "hidden whitespace-nowrap text-xs text-foreground md:table-cell")}>
+        {formatDateBr(link.examDate)}
+        <span className="mx-1 text-muted-foreground">·</span>
+        {link.examTime}
       </TableCell>
       <TableCell
         className={cn(
-          "hidden px-5 py-4 text-sm font-medium 2xl:table-cell",
+          COMPACT_CELL,
+          "hidden max-w-[120px] truncate text-xs text-muted-foreground lg:table-cell"
+        )}
+        title={link.professionalName}
+      >
+        {link.professionalName}
+      </TableCell>
+      <TableCell
+        className={cn(
+          COMPACT_CELL,
+          "hidden text-xs font-medium xl:table-cell",
           link.exam.profit >= 0 ? "text-primary" : "text-destructive"
         )}
       >
         {formatCurrency(link.exam.profit)}
       </TableCell>
-      <TableCell className="px-5 py-4">
-        <div className="flex items-center justify-end gap-2">
+      <TableCell className={cn(COMPACT_CELL, "w-[88px]")}>
+        <div className="flex items-center justify-end gap-1">
           <Button
             variant="ghost"
-            size="icon-lg"
-            className="rounded-md bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+            size="icon"
+            className="size-8 rounded-md bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
             aria-label={`Editar vínculo de ${link.employee.name}`}
             onClick={() => onEdit(link)}
             {...editIcon.rowHandlers}
@@ -127,14 +154,14 @@ function LinkRow({
             <ButtonAnimatedIcon
               icon={SquarePenIcon}
               iconRef={editIcon.iconRef}
-              size={16}
+              size={14}
               className="text-primary"
             />
           </Button>
           <Button
             variant="ghost"
-            size="icon-lg"
-            className="rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+            size="icon"
+            className="size-8 rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
             aria-label={`Excluir vínculo de ${link.employee.name}`}
             onClick={() => onDelete(link)}
             {...deleteIcon.rowHandlers}
@@ -142,7 +169,7 @@ function LinkRow({
             <ButtonAnimatedIcon
               icon={DeleteIcon}
               iconRef={deleteIcon.iconRef}
-              size={16}
+              size={14}
               className="text-destructive"
             />
           </Button>
@@ -173,6 +200,8 @@ export function EmployeeExamsTable() {
     setEmployeeIdFilter,
     examIdFilter,
     setExamIdFilter,
+    paymentStatusFilter,
+    setPaymentStatusFilter,
     examDateFromFilter,
     setExamDateFromFilter,
     examDateToFilter,
@@ -195,6 +224,7 @@ export function EmployeeExamsTable() {
     companyIdFilter.length > 0 ||
     employeeIdFilter.length > 0 ||
     examIdFilter.length > 0 ||
+    paymentStatusFilter.length > 0 ||
     examDateFromFilter.length > 0 ||
     examDateToFilter.length > 0;
   const isEmptyList = !isLoading && !error && links.length === 0;
@@ -312,28 +342,36 @@ export function EmployeeExamsTable() {
             </div>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
-            <div className="flex min-w-0 flex-col gap-2.5 lg:col-span-2 xl:col-span-1">
+          <div className={FILTER_GRID_CLASS}>
+            <div className={cn(FILTER_GRID_ITEM_CLASS, FILTER_FIELD_WRAPPER_CLASS)}>
               <label
                 htmlFor="link-professional-filter"
-                className="text-sm font-medium text-foreground"
+                className={FILTER_FIELD_LABEL_CLASS}
               >
                 Profissional
               </label>
               <div className="relative">
-                <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="link-professional-filter"
                   type="search"
                   placeholder="Nome do profissional..."
                   value={professionalNameFilter}
                   onChange={(e) => setProfessionalNameFilter(e.target.value)}
-                  className="h-11 rounded-md pl-10"
+                  className={FILTER_INPUT_CLASS}
                 />
               </div>
             </div>
 
+            <PaymentStatusFilterSelect
+              className={FILTER_GRID_ITEM_CLASS}
+              value={paymentStatusFilter}
+              onChange={setPaymentStatusFilter}
+              disabled={isLoadingFilters}
+            />
+
             <CompanyFilterSelect
+              className={FILTER_GRID_ITEM_CLASS}
               value={companyIdFilter}
               onChange={setCompanyIdFilter}
               companies={companies}
@@ -341,6 +379,7 @@ export function EmployeeExamsTable() {
             />
 
             <EmployeeFilterSelect
+              className={FILTER_GRID_ITEM_CLASS}
               value={employeeIdFilter}
               onChange={setEmployeeIdFilter}
               employees={employees}
@@ -348,6 +387,7 @@ export function EmployeeExamsTable() {
             />
 
             <ExamCatalogFilterSelect
+              className={FILTER_GRID_ITEM_CLASS}
               value={examIdFilter}
               onChange={setExamIdFilter}
               exams={exams}
@@ -355,21 +395,25 @@ export function EmployeeExamsTable() {
             />
 
             <DatePickerLabel
+              className={FILTER_GRID_ITEM_CLASS}
               id="link-date-from"
               label="Data do exame (de)"
               value={examDateFromFilter}
               onChange={setExamDateFromFilter}
               placeholder="Selecione a data inicial"
               disabled={isLoadingFilters}
+              compact
             />
 
             <DatePickerLabel
+              className={FILTER_GRID_ITEM_CLASS}
               id="link-date-to"
               label="Data do exame (até)"
               value={examDateToFilter}
               onChange={setExamDateToFilter}
               placeholder="Selecione a data final"
               disabled={isLoadingFilters}
+              compact
             />
           </div>
 
@@ -445,25 +489,28 @@ export function EmployeeExamsTable() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border/80 bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  <TableHead className={cn(COMPACT_CELL, "h-9 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase")}>
+                    Status
+                  </TableHead>
+                  <TableHead className={cn(COMPACT_CELL, "h-9 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase")}>
+                    Pago em
+                  </TableHead>
+                  <TableHead className={cn(COMPACT_CELL, "h-9 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase")}>
                     Funcionário
                   </TableHead>
-                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase md:table-cell">
-                    Empresa
-                  </TableHead>
-                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase lg:table-cell">
+                  <TableHead className={cn(COMPACT_CELL, "hidden h-9 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase sm:table-cell")}>
                     Exame
                   </TableHead>
-                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase xl:table-cell">
+                  <TableHead className={cn(COMPACT_CELL, "hidden h-9 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase md:table-cell")}>
+                    Data
+                  </TableHead>
+                  <TableHead className={cn(COMPACT_CELL, "hidden h-9 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase lg:table-cell")}>
                     Profissional
                   </TableHead>
-                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase xl:table-cell">
-                    Data / hora
-                  </TableHead>
-                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase 2xl:table-cell">
+                  <TableHead className={cn(COMPACT_CELL, "hidden h-9 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase xl:table-cell")}>
                     Lucro
                   </TableHead>
-                  <TableHead className="h-11 px-5 text-right text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  <TableHead className={cn(COMPACT_CELL, "h-9 w-[88px] text-right text-[11px] font-semibold tracking-wide text-muted-foreground uppercase")}>
                     Ações
                   </TableHead>
                 </TableRow>

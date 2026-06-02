@@ -1,7 +1,13 @@
 import {
   brDateInputToDateOnly,
   dateOnlyToBrDateInput,
+  parseDateOnlyInput,
 } from "@/shared/helpers/date.helper";
+import {
+  dateOnlyToPaidAtIso,
+  isoToDateOnly,
+  normalizeToDateOnly,
+} from "@/shared/helpers/payment-date.helper";
 import type {
   IEmployeeExam,
   IEmployeeExamCreatePayload,
@@ -18,6 +24,29 @@ export function employeeExamToFormValues(
     professionalName: link.professionalName,
     examDate: dateOnlyToBrDateInput(link.examDate),
     examTime: link.examTime,
+    paymentStatus: link.paymentStatus ?? "PENDING",
+    paidAt: isoToDateOnly(link.paidAt),
+  };
+}
+
+function formToPaymentFields(
+  data: EmployeeExamFormData
+): Pick<IEmployeeExamCreatePayload, "paymentStatus"> &
+  Partial<Pick<IEmployeeExamCreatePayload, "paidAt">> {
+  if (data.paymentStatus === "PAID") {
+    const dateOnly = normalizeToDateOnly(data.paidAt);
+    if (!dateOnly) {
+      throw new Error("Data de pagamento inválida");
+    }
+
+    return {
+      paymentStatus: "PAID",
+      paidAt: dateOnlyToPaidAtIso(dateOnly),
+    };
+  }
+
+  return {
+    paymentStatus: "PENDING",
   };
 }
 
@@ -32,6 +61,7 @@ function formToEmployeeExamSharedFields(data: EmployeeExamFormData) {
     professionalName: data.professionalName.trim(),
     examDate,
     examTime: data.examTime.trim(),
+    ...formToPaymentFields(data),
   };
 }
 
@@ -58,4 +88,14 @@ export function formToEmployeeExamUpdatePayload(
     ...formToEmployeeExamSharedFields(data),
     exam: { id: examId },
   };
+}
+
+export function isValidPaidAtInput(value: string | undefined): boolean {
+  const dateOnly = normalizeToDateOnly(value);
+  if (!dateOnly) return false;
+
+  const date = parseDateOnlyInput(dateOnly);
+  if (!date) return false;
+
+  return date <= new Date();
 }

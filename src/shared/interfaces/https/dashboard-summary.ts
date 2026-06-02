@@ -1,3 +1,17 @@
+export interface IDashboardPaymentSummaryGroup {
+  paymentStatus?: "PENDING" | "PAID";
+  count: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+}
+
+export interface IDashboardPayments {
+  pending: IDashboardPaymentSummaryGroup;
+  paid: IDashboardPaymentSummaryGroup;
+  total: IDashboardPaymentSummaryGroup;
+}
+
 export interface IDashboardSummaryTotals {
   companies: number;
   employees: number;
@@ -89,6 +103,7 @@ export interface IDashboardRecentEmployeeExam {
 
 export interface IDashboardSummaryData {
   totals: IDashboardSummaryTotals;
+  payments: IDashboardPayments;
   financial: IDashboardFinancial;
   topCompaniesByEmployees: IDashboardTopCompanyByEmployees[];
   topCompaniesByEmployeeExams: IDashboardTopCompanyByEmployeeExams[];

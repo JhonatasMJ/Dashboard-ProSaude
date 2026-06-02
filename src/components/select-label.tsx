@@ -7,12 +7,22 @@ import {
 } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   SearchableSelect,
   type SearchableSelectOption,
 } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 
 export type SelectOption = SearchableSelectOption;
+
+const triggerClassName =
+  "h-11! w-full min-w-0 justify-between rounded-md px-3.5 text-base shadow-none";
 
 type SelectLabelProps<T extends FieldValues> = {
   label: string;
@@ -23,6 +33,7 @@ type SelectLabelProps<T extends FieldValues> = {
   searchPlaceholder?: string;
   containerClassName?: string;
   disabled?: boolean;
+  searchable?: boolean;
 };
 
 export function SelectLabel<T extends FieldValues>({
@@ -34,6 +45,7 @@ export function SelectLabel<T extends FieldValues>({
   searchPlaceholder = "Buscar...",
   containerClassName,
   disabled = false,
+  searchable = true,
 }: SelectLabelProps<T>) {
   const fieldId = String(name);
 
@@ -51,16 +63,46 @@ export function SelectLabel<T extends FieldValues>({
           <Label htmlFor={fieldId} className="text-sm">
             {label}
           </Label>
-          <SearchableSelect
-            id={fieldId}
-            value={field.value || null}
-            onValueChange={(next) => field.onChange(next ?? "")}
-            options={items}
-            placeholder={placeholder}
-            searchPlaceholder={searchPlaceholder}
-            disabled={disabled}
-            aria-invalid={!!fieldState.error}
-          />
+
+          {searchable ? (
+            <SearchableSelect
+              id={fieldId}
+              value={field.value || null}
+              onValueChange={(next) => field.onChange(next ?? "")}
+              options={items}
+              placeholder={placeholder}
+              searchPlaceholder={searchPlaceholder}
+              disabled={disabled}
+              aria-invalid={!!fieldState.error}
+            />
+          ) : (
+            <Select
+              value={field.value || null}
+              onValueChange={(value) => field.onChange(value ?? "")}
+              items={items}
+              disabled={disabled}
+            >
+              <SelectTrigger
+                id={fieldId}
+                aria-invalid={!!fieldState.error}
+                className={cn(
+                  triggerClassName,
+                  fieldState.error &&
+                    "border-destructive ring-3 ring-destructive/20"
+                )}
+              >
+                <SelectValue placeholder={placeholder} className="truncate" />
+              </SelectTrigger>
+              <SelectContent align="start">
+                {items.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>
+                    <span className="block truncate">{item.label}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
           {fieldState.error?.message && (
             <p className="text-sm text-destructive">
               {fieldState.error.message}

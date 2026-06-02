@@ -39,6 +39,12 @@ export function buildEmployeeExamsFilterSummary(
     lines.push(`Data do exame (até): ${dateOnlyToBrDateInput(params.examDateTo)}`);
   }
 
+  if (params.paymentStatus === "PENDING") {
+    lines.push("Status: Pendente");
+  } else if (params.paymentStatus === "PAID") {
+    lines.push("Status: Pago");
+  }
+
   if (lines.length === 0) {
     lines.push("Nenhum filtro aplicado (todos os vínculos)");
   }

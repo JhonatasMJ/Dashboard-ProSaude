@@ -1,4 +1,5 @@
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
+import type { PaymentStatus } from "@/shared/types/payment-status.types";
 
 export interface IEmployeeExamCompanyRef {
   id: string;
@@ -24,6 +25,8 @@ export interface IEmployeeExam {
   professionalName: string;
   examDate: string;
   examTime: string;
+  paymentStatus: PaymentStatus;
+  paidAt: string | null;
   employee: IEmployeeExamEmployeeRef;
   exam: IEmployeeExamExamRef;
   createdAt: string;
@@ -35,8 +38,11 @@ export interface IEmployeeExamsListParams {
   employeeId?: string;
   examId?: string;
   companyId?: string;
+  paymentStatus?: PaymentStatus;
   examDateFrom?: string;
   examDateTo?: string;
+  paidAtFrom?: string;
+  paidAtTo?: string;
   page?: number;
   pageSize?: number;
 }
@@ -56,6 +62,8 @@ export interface IEmployeeExamCreatePayload {
   professionalName: string;
   examDate: string;
   examTime: string;
+  paymentStatus: PaymentStatus;
+  paidAt?: string | null;
 }
 
 export interface IEmployeeExamUpdatePayload {
@@ -64,4 +72,6 @@ export interface IEmployeeExamUpdatePayload {
   professionalName?: string;
   examDate?: string;
   examTime?: string;
+  paymentStatus?: PaymentStatus;
+  paidAt?: string | null;
 }

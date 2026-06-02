@@ -23,14 +23,13 @@ export function DashboardSummary() {
 
   return (
     <div className="flex flex-col gap-8">
-
       <DashboardSection
         title="Indicadores principais"
-        description="O que mais importa para o dia a dia"
+        description="Pagamentos, operação e volume de vínculos"
       >
         <DashboardKpiRow
           totals={summary?.totals}
-          financial={summary?.financial}
+          payments={summary?.payments}
           isLoading={isLoading}
         />
         <DashboardSecondaryMetrics
@@ -40,8 +39,8 @@ export function DashboardSummary() {
       </DashboardSection>
 
       <DashboardSection
-        title="Financeiro"
-        description="Visão comparativa e distribuição do mês"
+        title="Análise financeira"
+        description="Comparativo por período e distribuição receita, custo e lucro"
       >
         <SummaryFinancialSection
           financial={summary?.financial}

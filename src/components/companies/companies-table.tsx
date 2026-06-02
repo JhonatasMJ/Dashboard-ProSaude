@@ -23,6 +23,7 @@ import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
 import { useCompanies } from "@/contexts/companies-context";
 import { cn } from "@/lib/utils";
 import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
+import { FILTER_INPUT_CLASS } from "@/shared/constants/filter-field.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatCnpj } from "@/shared/helpers/input-masks.helper";
 import type { ICompany } from "@/shared/interfaces/https/company";
@@ -208,13 +209,13 @@ export function CompaniesTable() {
           </div>
 
           <div className="relative max-w-full">
-            <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Buscar por nome..."
               value={nameFilter}
               onChange={(e) => setNameFilter(e.target.value)}
-              className="h-10 rounded-md pl-10"
+              className={FILTER_INPUT_CLASS}
               aria-label="Buscar empresa por nome"
             />
           </div>

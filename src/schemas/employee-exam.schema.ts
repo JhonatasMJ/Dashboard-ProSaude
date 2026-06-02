@@ -1,4 +1,5 @@
 import * as yup from "yup";
+import { isValidPaidAtInput } from "@/shared/helpers/employee-exam-form.helper";
 import { isValidBrDateInput } from "@/shared/helpers/date.helper";
 
 const EXAM_TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -26,4 +27,23 @@ export const employeeExamSchema = yup.object({
     .test("valid-time", "Informe a hora no formato HH:mm", (value) =>
       EXAM_TIME_PATTERN.test(value ?? "")
     ),
+  paymentStatus: yup
+    .mixed<"PENDING" | "PAID">()
+    .oneOf(["PENDING", "PAID"], "Status inválido")
+    .required("Status é obrigatório"),
+  paidAt: yup
+    .string()
+    .default("")
+    .when("paymentStatus", {
+      is: "PAID",
+      then: (schema) =>
+        schema
+          .required("Data de pagamento é obrigatória")
+          .test(
+            "valid-paid-at",
+            "Informe uma data de pagamento válida",
+            (value) => isValidPaidAtInput(value)
+          ),
+      otherwise: (schema) => schema.default(""),
+    }),
 });

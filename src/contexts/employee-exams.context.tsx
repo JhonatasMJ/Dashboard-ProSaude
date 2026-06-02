@@ -31,6 +31,7 @@ import { employeeExamService } from "@/shared/services/employee-exam.service";
 import { employeeService } from "@/shared/services/employee.service";
 import { examService } from "@/shared/services/exam.service";
 import type { EmployeeExamsReportListParams } from "@/pdf/employee-exams-report.types";
+import type { PaymentStatus } from "@/shared/types/payment-status.types";
 import type { EmployeeExamFormData } from "@/types/employee-exam-form.types";
 
 export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
@@ -52,6 +53,9 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
   const [companyIdFilter, setCompanyIdFilter] = useState("");
   const [employeeIdFilter, setEmployeeIdFilter] = useState("");
   const [examIdFilter, setExamIdFilter] = useState("");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<
+    PaymentStatus | ""
+  >("");
   const [examDateFromFilter, setExamDateFromFilter] = useState("");
   const [examDateToFilter, setExamDateToFilter] = useState("");
 
@@ -87,6 +91,15 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
     setPage(1);
     setIsLoading(true);
   }, []);
+
+  const handlePaymentStatusFilterChange = useCallback(
+    (value: PaymentStatus | "") => {
+      setPaymentStatusFilter(value);
+      setPage(1);
+      setIsLoading(true);
+    },
+    []
+  );
 
   const handleExamDateFromChange = useCallback((value: string) => {
     setExamDateFromFilter(value);
@@ -163,6 +176,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
         ? { employeeId: activeEmployeeIdFilter }
         : {}),
       ...(examIdFilter ? { examId: examIdFilter } : {}),
+      ...(paymentStatusFilter ? { paymentStatus: paymentStatusFilter } : {}),
       ...(examDateFromFilter ? { examDateFrom: examDateFromFilter } : {}),
       ...(examDateToFilter ? { examDateTo: examDateToFilter } : {}),
     }),
@@ -171,6 +185,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       companyIdFilter,
       activeEmployeeIdFilter,
       examIdFilter,
+      paymentStatusFilter,
       examDateFromFilter,
       examDateToFilter,
     ]
@@ -339,6 +354,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       companyIdFilter,
       employeeIdFilter,
       examIdFilter,
+      paymentStatusFilter,
       examDateFromFilter,
       examDateToFilter,
       exportListParams,
@@ -347,6 +363,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       setCompanyIdFilter: handleCompanyFilterChange,
       setEmployeeIdFilter: handleEmployeeFilterChange,
       setExamIdFilter: handleExamFilterChange,
+      setPaymentStatusFilter: handlePaymentStatusFilterChange,
       setExamDateFromFilter: handleExamDateFromChange,
       setExamDateToFilter: handleExamDateToChange,
       setPage: handlePageChange,
@@ -369,6 +386,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       companyIdFilter,
       employeeIdFilter,
       examIdFilter,
+      paymentStatusFilter,
       examDateFromFilter,
       examDateToFilter,
       exportListParams,
@@ -376,6 +394,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       handleCompanyFilterChange,
       handleEmployeeFilterChange,
       handleExamFilterChange,
+      handlePaymentStatusFilterChange,
       handleExamDateFromChange,
       handleExamDateToChange,
       handlePageChange,

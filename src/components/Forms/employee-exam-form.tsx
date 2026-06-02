@@ -1,6 +1,7 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useEffect, useMemo, type ReactNode } from "react";
 import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
+import { DatePickerLabel } from "@/components/date-picker-label";
 import { InputLabel } from "@/components/input-label";
 import { MaskedInputLabel } from "@/components/masked-input-label";
 import { MultiSelectLabel } from "@/components/multi-select-label";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { employeeExamSchema } from "@/schemas/employee-exam.schema";
 import { employeeExamToFormValues } from "@/shared/helpers/employee-exam-form.helper";
+import { dateToDateOnly } from "@/shared/helpers/date.helper";
 import { birthDateMask, examTimeMask } from "@/shared/helpers/input-masks.helper";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
@@ -35,7 +37,14 @@ const emptyValues: EmployeeExamFormData = {
   professionalName: "",
   examDate: "",
   examTime: "",
+  paymentStatus: "PENDING",
+  paidAt: "",
 };
+
+const paymentStatusOptions = [
+  { value: "PENDING", label: "Pendente" },
+  { value: "PAID", label: "Pago" },
+];
 
 function FormSection({
   title,
@@ -91,6 +100,22 @@ export function EmployeeExamForm({
     });
 
   const employeeIdValue = useWatch({ control, name: "employeeId" });
+  const paymentStatus = useWatch({ control, name: "paymentStatus" });
+  const paidAtValue = useWatch({ control, name: "paidAt" });
+  const isPaid = paymentStatus === "PAID";
+
+  useEffect(() => {
+    if (!isPaid) {
+      setValue("paidAt", "", { shouldValidate: true });
+      return;
+    }
+
+    if (!paidAtValue?.trim()) {
+      setValue("paidAt", dateToDateOnly(new Date()), {
+        shouldValidate: true,
+      });
+    }
+  }, [isPaid, paidAtValue, setValue]);
 
   const selectedEmployee = useMemo(
     () => employees.find((employee) => employee.id === employeeIdValue),
@@ -227,6 +252,34 @@ export function EmployeeExamForm({
           maskOptions={examTimeMask}
           placeholder="HH:mm"
         />
+      </FormSection>
+
+      <FormSection
+        title="Pagamento"
+        description="Informe se o vínculo está pendente ou já foi pago."
+      >
+        <SelectLabel
+          control={control}
+          name="paymentStatus"
+          label="Status"
+          options={paymentStatusOptions}
+          placeholder="Selecione o status"
+          disabled={isSubmitting}
+          searchable={false}
+        />
+
+        {isPaid && (
+          <DatePickerLabel
+            id={`${formId}-paid-at`}
+            label="Data de pagamento"
+            value={paidAtValue ?? ""}
+            onChange={(value) =>
+              setValue("paidAt", value, { shouldValidate: true })
+            }
+            placeholder="Selecione a data"
+            disabled={isSubmitting}
+          />
+        )}
       </FormSection>
 
       {!isSheet && onCancel && (

@@ -5,6 +5,7 @@ import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
 import type { IExam } from "@/shared/interfaces/https/exam";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import type { EmployeeExamsReportListParams } from "@/pdf/employee-exams-report.types";
+import type { PaymentStatus } from "@/shared/types/payment-status.types";
 import type { EmployeeExamFormData } from "@/types/employee-exam-form.types";
 
 export interface EmployeeExamsContextValue {
@@ -21,6 +22,7 @@ export interface EmployeeExamsContextValue {
   companyIdFilter: string;
   employeeIdFilter: string;
   examIdFilter: string;
+  paymentStatusFilter: PaymentStatus | "";
   examDateFromFilter: string;
   examDateToFilter: string;
   exportListParams: EmployeeExamsReportListParams;
@@ -29,6 +31,7 @@ export interface EmployeeExamsContextValue {
   setCompanyIdFilter: (value: string) => void;
   setEmployeeIdFilter: (value: string) => void;
   setExamIdFilter: (value: string) => void;
+  setPaymentStatusFilter: (value: PaymentStatus | "") => void;
   setExamDateFromFilter: (value: string) => void;
   setExamDateToFilter: (value: string) => void;
   setPage: (page: number) => void;

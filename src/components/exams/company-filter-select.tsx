@@ -1,6 +1,11 @@
 import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import {
+  FILTER_FIELD_LABEL_CLASS,
+  FILTER_FIELD_WRAPPER_CLASS,
+  FILTER_SEARCHABLE_SELECT_CLASS,
+} from "@/shared/constants/filter-field.constants";
 import { ALL_COMPANIES_FILTER_VALUE } from "@/shared/constants/exam.constants";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +17,7 @@ interface CompanyFilterSelectProps {
   companies: { id: string; name: string }[];
   disabled?: boolean;
   className?: string;
+  id?: string;
 }
 
 export function CompanyFilterSelect({
@@ -20,6 +26,7 @@ export function CompanyFilterSelect({
   companies,
   disabled = false,
   className,
+  id = "exam-company-filter",
 }: CompanyFilterSelectProps) {
   const items = useMemo(
     () => [
@@ -35,12 +42,12 @@ export function CompanyFilterSelect({
   const selectValue = value || ALL_COMPANIES_FILTER_VALUE;
 
   return (
-    <div className={cn("flex w-full flex-col gap-2.5", className)}>
-      <Label htmlFor="exam-company-filter" className="text-sm">
+    <div className={cn(FILTER_FIELD_WRAPPER_CLASS, className)}>
+      <Label htmlFor={id} className={FILTER_FIELD_LABEL_CLASS}>
         Empresa
       </Label>
       <SearchableSelect
-        id="exam-company-filter"
+        id={id}
         value={selectValue}
         onValueChange={(next) =>
           onChange(
@@ -51,6 +58,7 @@ export function CompanyFilterSelect({
         placeholder="Todas as empresas"
         searchPlaceholder="Buscar empresa..."
         disabled={disabled}
+        className={FILTER_SEARCHABLE_SELECT_CLASS}
       />
     </div>
   );

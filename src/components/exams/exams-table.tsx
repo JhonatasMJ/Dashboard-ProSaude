@@ -24,6 +24,11 @@ import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
 import { useExams } from "@/contexts/exams-context";
 import { cn } from "@/lib/utils";
 import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
+import {
+  FILTER_FIELD_LABEL_CLASS,
+  FILTER_FIELD_WRAPPER_CLASS,
+  FILTER_INPUT_CLASS,
+} from "@/shared/constants/filter-field.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatCurrency } from "@/shared/helpers/format-currency.helper";
 import type { IExam } from "@/shared/interfaces/https/exam";
@@ -228,30 +233,30 @@ export function ExamsTable() {
             </Button>
           </div>
 
-          <div className="flex flex-col gap-2.5 lg:flex-row">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
             <CompanyFilterSelect
-              className="lg:w-72 lg:shrink-0"
+              className="lg:w-64 lg:shrink-0"
               value={companyIdFilter}
               onChange={setCompanyIdFilter}
               companies={companies}
               disabled={isLoadingFilters}
             />
-            <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+            <div className={cn(FILTER_FIELD_WRAPPER_CLASS, "min-w-0 flex-1")}>
               <label
                 htmlFor="exam-name-filter"
-                className="text-sm font-medium text-foreground"
+                className={FILTER_FIELD_LABEL_CLASS}
               >
                 Buscar exame
               </label>
               <div className="relative">
-                <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="exam-name-filter"
                   type="search"
                   placeholder="Nome do exame..."
                   value={nameFilter}
                   onChange={(e) => setNameFilter(e.target.value)}
-                  className="h-11 rounded-md pl-10"
+                  className={FILTER_INPUT_CLASS}
                 />
               </div>
             </div>
