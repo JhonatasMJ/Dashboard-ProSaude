@@ -24,7 +24,7 @@ export interface IEmployeeExam {
   id: string;
   professionalName: string;
   examDate: string;
-  examTime: string;
+  examTime: string | null;
   paymentStatus: PaymentStatus;
   paidAt: string | null;
   employee: IEmployeeExamEmployeeRef;
@@ -61,7 +61,7 @@ export interface IEmployeeExamCreatePayload {
   exam: { id: string };
   professionalName: string;
   examDate: string;
-  examTime: string;
+  examTime?: string | null;
   paymentStatus: PaymentStatus;
   paidAt?: string | null;
 }
@@ -71,7 +71,7 @@ export interface IEmployeeExamUpdatePayload {
   exam?: { id: string };
   professionalName?: string;
   examDate?: string;
-  examTime?: string;
+  examTime?: string | null;
   paymentStatus?: PaymentStatus;
   paidAt?: string | null;
 }

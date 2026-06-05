@@ -174,7 +174,7 @@ export function EmployeeExamForm({
         description={
           isEditing
             ? "Atualize os dados deste vínculo."
-            : "Selecione um ou mais exames realizados pelo funcionário na mesma data e hora."
+            : "Selecione um ou mais exames realizados pelo funcionário na mesma data."
         }
       >
         <SelectLabel
@@ -248,7 +248,7 @@ export function EmployeeExamForm({
         <MaskedInputLabel
           control={control}
           name="examTime"
-          label="Hora do exame"
+          label="Hora do exame (opcional)"
           maskOptions={examTimeMask}
           placeholder="HH:mm"
         />

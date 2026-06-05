@@ -120,8 +120,12 @@ function LinkRow({
       </TableCell>
       <TableCell className={cn(COMPACT_CELL, "hidden whitespace-nowrap text-xs text-foreground md:table-cell")}>
         {formatDateBr(link.examDate)}
-        <span className="mx-1 text-muted-foreground">·</span>
-        {link.examTime}
+        {link.examTime ? (
+          <>
+            <span className="mx-1 text-muted-foreground">·</span>
+            {link.examTime}
+          </>
+        ) : null}
       </TableCell>
       <TableCell
         className={cn(

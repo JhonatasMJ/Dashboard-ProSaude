@@ -53,7 +53,7 @@ function getColumnStyles(tableWidth: number) {
 function mapLinkToRow(link: IEmployeeExam): string[] {
   return [
     formatDateBr(link.examDate),
-    link.examTime,
+    link.examTime ?? "—",
     link.exam.name,
     link.employee.name,
     link.professionalName,

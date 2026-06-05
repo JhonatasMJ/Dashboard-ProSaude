@@ -23,7 +23,7 @@ export function employeeExamToFormValues(
     examIds: [link.exam.id],
     professionalName: link.professionalName,
     examDate: dateOnlyToBrDateInput(link.examDate),
-    examTime: link.examTime,
+    examTime: link.examTime ?? "",
     paymentStatus: link.paymentStatus ?? "PENDING",
     paidAt: isoToDateOnly(link.paidAt),
   };
@@ -56,11 +56,13 @@ function formToEmployeeExamSharedFields(data: EmployeeExamFormData) {
     throw new Error("Data do exame inválida");
   }
 
+  const trimmedTime = data.examTime.trim();
+
   return {
     employee: { id: data.employeeId },
     professionalName: data.professionalName.trim(),
     examDate,
-    examTime: data.examTime.trim(),
+    ...(trimmedTime ? { examTime: trimmedTime } : {}),
     ...formToPaymentFields(data),
   };
 }

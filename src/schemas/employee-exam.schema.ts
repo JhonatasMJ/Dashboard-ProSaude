@@ -23,10 +23,12 @@ export const employeeExamSchema = yup.object({
     ),
   examTime: yup
     .string()
-    .required("Hora do exame é obrigatória")
-    .test("valid-time", "Informe a hora no formato HH:mm", (value) =>
-      EXAM_TIME_PATTERN.test(value ?? "")
-    ),
+    .default("")
+    .test("valid-time", "Informe a hora no formato HH:mm", (value) => {
+      const trimmed = value?.trim();
+      if (!trimmed) return true;
+      return EXAM_TIME_PATTERN.test(trimmed);
+    }),
   paymentStatus: yup
     .mixed<"PENDING" | "PAID">()
     .oneOf(["PENDING", "PAID"], "Status inválido")
