@@ -8,6 +8,7 @@ import { LayoutGridIcon } from "@/components/ui/layout-grid";
 import { SettingsIcon } from "@/components/ui/settings";
 import { StethoscopeIcon } from "@/components/ui/stethoscope";
 import { UsersIcon } from "@/components/ui/users";
+import { WalletIcon } from "@/components/ui/wallet";
 
 export type AnimatedIcon = ComponentType<
   { size?: number; className?: string } & HTMLAttributes<HTMLDivElement> &
@@ -34,6 +35,11 @@ export const dashboardNavItems: NavItem[] = [
     title: "Empresas",
     href: "/dashboard/empresas",
     icon: FileTextIcon,
+  },
+  {
+    title: "Contas",
+    href: "/dashboard/contas",
+    icon: WalletIcon,
   },
   {
     title: "Exames",

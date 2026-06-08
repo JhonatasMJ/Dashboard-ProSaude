@@ -4,7 +4,7 @@ export interface ICompany {
   id: string;
   name: string;
   taxId: string;
-  email: string;
+  email: string | null;
   phone: string;
   street: string;
   neighborhood: string;
@@ -33,7 +33,7 @@ export interface ICompanyResponse {
 export interface ICompanyPayload {
   name: string;
   taxId: string;
-  email: string;
+  email?: string;
   phone: string;
   street: string;
   neighborhood: string;

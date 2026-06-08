@@ -28,7 +28,8 @@ function formatAxisCurrency(value: number) {
 
 const COMPARISON_METRICS = [
   { key: "receita" as const, label: "Receita" },
-  { key: "custo" as const, label: "Custo" },
+  { key: "custoExames" as const, label: "Custo exames" },
+  { key: "custoContas" as const, label: "Custo contas" },
   { key: "lucro" as const, label: "Lucro" },
 ];
 
@@ -38,15 +39,19 @@ function buildPeriodComparison(financial: IDashboardFinancial) {
     todoPeriodo:
       key === "receita"
         ? financial.allTime.revenue
-        : key === "custo"
-          ? financial.allTime.cost
-          : financial.allTime.profit,
+        : key === "custoExames"
+          ? financial.allTime.examCost
+          : key === "custoContas"
+            ? financial.allTime.contaCost
+            : financial.allTime.profit,
     esteMes:
       key === "receita"
         ? financial.thisMonth.revenue
-        : key === "custo"
-          ? financial.thisMonth.cost
-          : financial.thisMonth.profit,
+        : key === "custoExames"
+          ? financial.thisMonth.examCost
+          : key === "custoContas"
+            ? financial.thisMonth.contaCost
+            : financial.thisMonth.profit,
   }));
 }
 
@@ -66,11 +71,20 @@ function resolveCompositionPeriod(financial: IDashboardFinancial) {
 
 function buildComposition(financial: IDashboardFinancial) {
   const { period } = resolveCompositionPeriod(financial);
-  const { revenue, cost, profit } = period;
+  const { revenue, examCost, contaCost, profit } = period;
 
   return [
     { name: "Receita", value: Math.max(revenue, 0), color: DASHBOARD_CHART.revenue },
-    { name: "Custo", value: Math.max(cost, 0), color: DASHBOARD_CHART.cost },
+    {
+      name: "Custo exames",
+      value: Math.max(examCost, 0),
+      color: DASHBOARD_CHART.examCost,
+    },
+    {
+      name: "Custo contas",
+      value: Math.max(contaCost, 0),
+      color: DASHBOARD_CHART.contaCost,
+    },
     { name: "Lucro", value: Math.max(profit, 0), color: DASHBOARD_CHART.profit },
   ].filter((item) => item.value > 0);
 }
@@ -108,141 +122,147 @@ export function SummaryFinancialSection({
   const comparisonData = buildPeriodComparison(financial);
   const compositionData = buildComposition(financial);
   const compositionLabel = resolveCompositionPeriod(financial).label;
+  const activePeriod = resolveCompositionPeriod(financial).period;
 
   return (
     <div className="grid gap-4 lg:grid-cols-12">
-        <Card className="col-span-12 gap-0 overflow-hidden rounded-md border border-border bg-white py-0 shadow-none lg:col-span-8">
-          <div className="border-b border-border/60 px-5 py-4">
-            <h3 className="font-semibold text-foreground">
-              Comparativo financeiro
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Receita, custo e lucro — todo o período vs. mês atual
-            </p>
-          </div>
-          <div className="h-[300px] w-full px-2 py-4 sm:px-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={comparisonData}
-                margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-                barGap={4}
-                barCategoryGap="20%"
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="oklch(0.922 0 0)"
-                />
-                <XAxis
-                  dataKey="metric"
-                  tick={{ fontSize: 12, fill: "oklch(0.556 0 0)" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tickFormatter={formatAxisCurrency}
-                  tick={{ fontSize: 11, fill: "oklch(0.556 0 0)" }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={72}
-                />
-                <Tooltip
-                  cursor={{ fill: "oklch(0.97 0 0)" }}
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload?.length) return null;
+      <Card className="col-span-12 gap-0 overflow-hidden rounded-md border border-border bg-white py-0 shadow-none lg:col-span-8">
+        <div className="border-b border-border/60 px-5 py-4">
+          <h3 className="font-semibold text-foreground">
+            Comparativo financeiro
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Receita, custos de exames e contas, e lucro — todo o período vs.
+            mês atual
+          </p>
+        </div>
+        <div className="h-[300px] w-full px-2 py-4 sm:px-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={comparisonData}
+              margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+              barGap={4}
+              barCategoryGap="20%"
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="oklch(0.922 0 0)"
+              />
+              <XAxis
+                dataKey="metric"
+                tick={{ fontSize: 12, fill: "oklch(0.556 0 0)" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tickFormatter={formatAxisCurrency}
+                tick={{ fontSize: 11, fill: "oklch(0.556 0 0)" }}
+                axisLine={false}
+                tickLine={false}
+                width={72}
+              />
+              <Tooltip
+                cursor={{ fill: "oklch(0.97 0 0)" }}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
 
-                    return (
-                      <div className="rounded-md border border-border bg-white px-3 py-2 text-sm shadow-md">
-                        {label ? (
-                          <p className="mb-1.5 font-medium text-foreground">
-                            {label}
-                          </p>
-                        ) : null}
-                        <ul className="space-y-1">
-                          {payload.map((entry) => (
-                            <li
-                              key={String(entry.dataKey)}
-                              className="flex justify-between gap-4 tabular-nums"
-                            >
-                              <span className="text-muted-foreground">
-                                {PERIOD_LABELS[String(entry.dataKey)] ??
-                                  entry.name}
-                              </span>
-                              <span className="font-medium text-foreground">
-                                {formatCurrency(Number(entry.value))}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    );
-                  }}
-                />
-                <Legend
-                  wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                  return (
+                    <div className="rounded-md border border-border bg-white px-3 py-2 text-sm shadow-md">
+                      {label ? (
+                        <p className="mb-1.5 font-medium text-foreground">
+                          {label}
+                        </p>
+                      ) : null}
+                      <ul className="space-y-1">
+                        {payload.map((entry) => (
+                          <li
+                            key={String(entry.dataKey)}
+                            className="flex justify-between gap-4 tabular-nums"
+                          >
+                            <span className="text-muted-foreground">
+                              {PERIOD_LABELS[String(entry.dataKey)] ??
+                                entry.name}
+                            </span>
+                            <span className="font-medium text-foreground">
+                              {formatCurrency(Number(entry.value))}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                }}
+              />
+              <Legend
+                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                formatter={(value) =>
+                  value === "todoPeriodo" ? "Todo o período" : "Este mês"
+                }
+              />
+              <Bar
+                dataKey="todoPeriodo"
+                name="todoPeriodo"
+                fill={DASHBOARD_CHART.allTime}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={48}
+              />
+              <Bar
+                dataKey="esteMes"
+                name="esteMes"
+                fill={DASHBOARD_CHART.thisMonth}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={48}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      <Card className="col-span-12 gap-0 overflow-hidden rounded-md border border-border bg-white py-0 shadow-none lg:col-span-4">
+        <div className="border-b border-border/60 px-5 py-4">
+          <h3 className="font-semibold text-foreground">{compositionLabel}</h3>
+          <p className="text-sm text-muted-foreground">
+            Custo total {formatCurrency(activePeriod.cost)} · Margem{" "}
+            {activePeriod.marginPercent.toLocaleString("pt-BR", {
+              maximumFractionDigits: 1,
+            })}
+            %
+          </p>
+        </div>
+        <div className="flex h-[300px] flex-col items-center justify-center px-4 py-4">
+          {compositionData.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Sem movimentação financeira registrada.
+            </p>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={compositionData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={56}
+                  outerRadius={88}
+                  paddingAngle={2}
+                >
+                  {compositionData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
                   formatter={(value) =>
-                    value === "todoPeriodo" ? "Todo o período" : "Este mês"
+                    formatCurrency(typeof value === "number" ? value : 0)
                   }
                 />
-                <Bar
-                  dataKey="todoPeriodo"
-                  name="todoPeriodo"
-                  fill={DASHBOARD_CHART.allTime}
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={48}
-                />
-                <Bar
-                  dataKey="esteMes"
-                  name="esteMes"
-                  fill={DASHBOARD_CHART.thisMonth}
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={48}
-                />
-              </BarChart>
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+              </PieChart>
             </ResponsiveContainer>
-          </div>
-        </Card>
-
-        <Card className="col-span-12 gap-0 overflow-hidden rounded-md border border-border bg-white py-0 shadow-none lg:col-span-4">
-          <div className="border-b border-border/60 px-5 py-4">
-            <h3 className="font-semibold text-foreground">{compositionLabel}</h3>
-            <p className="text-sm text-muted-foreground">
-              Distribuição de receita, custo e lucro
-            </p>
-          </div>
-          <div className="flex h-[300px] flex-col items-center justify-center px-4 py-4">
-            {compositionData.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Sem movimentação financeira registrada.
-              </p>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={compositionData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={56}
-                    outerRadius={88}
-                    paddingAngle={2}
-                  >
-                    {compositionData.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value) =>
-                      formatCurrency(typeof value === "number" ? value : 0)
-                    }
-                  />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </Card>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }

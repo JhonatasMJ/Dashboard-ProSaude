@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const METRICS = [
   { key: "companies", label: "Empresas" },
   { key: "exams", label: "Exames no catálogo" },
-  { key: "users", label: "Usuários" },
+  { key: "employeeExams", label: "Vínculos" },
   { key: "employeesWithoutExam", label: "Sem exame vinculado", highlight: true },
   { key: "upcomingExamsNext7Days", label: "Próximos 7 dias", highlight: true },
 ] as const;

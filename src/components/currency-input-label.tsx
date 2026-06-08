@@ -6,7 +6,10 @@ import {
 } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { applyPriceDigitInput } from "@/shared/helpers/currency-input.helper";
+import {
+  applyPriceDigitInput,
+  MAX_EXAM_PRICE,
+} from "@/shared/helpers/currency-input.helper";
 import { cn } from "@/lib/utils";
 
 type CurrencyInputLabelProps<T extends FieldValues> = {
@@ -16,6 +19,7 @@ type CurrencyInputLabelProps<T extends FieldValues> = {
   containerClassName?: string;
   placeholder?: string;
   disabled?: boolean;
+  maxValue?: number;
 };
 
 export function CurrencyInputLabel<T extends FieldValues>({
@@ -25,8 +29,10 @@ export function CurrencyInputLabel<T extends FieldValues>({
   containerClassName,
   placeholder = "0,00",
   disabled = false,
+  maxValue = MAX_EXAM_PRICE,
 }: CurrencyInputLabelProps<T>) {
   const inputId = String(name);
+  const maxCents = Math.round(maxValue * 100);
 
   return (
     <Controller
@@ -53,7 +59,9 @@ export function CurrencyInputLabel<T extends FieldValues>({
               aria-invalid={!!fieldState.error}
               className="h-11 pl-10"
               value={field.value ?? ""}
-              onChange={(e) => field.onChange(applyPriceDigitInput(e.target.value))}
+              onChange={(e) =>
+                field.onChange(applyPriceDigitInput(e.target.value, maxCents))
+              }
               onBlur={field.onBlur}
               ref={field.ref}
             />

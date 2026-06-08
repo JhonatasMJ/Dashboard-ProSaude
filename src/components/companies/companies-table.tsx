@@ -76,7 +76,7 @@ function CompanyRow({
         {formatCnpj(company.taxId)}
       </TableCell>
       <TableCell className="hidden max-w-[220px] truncate px-5 py-4 text-sm text-muted-foreground lg:table-cell">
-        {company.email}
+        {company.email || "—"}
       </TableCell>
       <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground lg:table-cell">
         {company.city} — {company.state}

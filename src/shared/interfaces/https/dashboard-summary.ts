@@ -23,16 +23,21 @@ export interface IDashboardSummaryTotals {
   employeesWithoutExam: number;
   upcomingExamsNext7Days: number;
   employeeExamsThisMonth: number;
+  contas: number;
 }
 
 export interface IDashboardFinancialAveragePerExam {
   revenue: number;
+  examCost: number;
+  contaCost: number;
   cost: number;
   profit: number;
 }
 
 export interface IDashboardFinancialPeriod {
   revenue: number;
+  examCost: number;
+  contaCost: number;
   cost: number;
   profit: number;
   marginPercent: number;
@@ -72,6 +77,8 @@ export interface IDashboardTopCompanyByRevenue {
   name: string;
   employeeExamCount: number;
   revenue: number;
+  examCost: number;
+  contaCost: number;
   cost: number;
   profit: number;
   marginPercent: number;
@@ -83,6 +90,8 @@ export interface IDashboardTopExamByVolume {
   name: string;
   employeeExamCount: number;
   revenue: number;
+  examCost: number;
+  contaCost: number;
   cost: number;
   profit: number;
   marginPercent: number;

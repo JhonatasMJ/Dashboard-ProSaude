@@ -8,6 +8,7 @@ export const companySchema = yup.object({
     .min(18, "CNPJ incompleto"),
   email: yup
     .string()
+    .optional()
     .default("")
     .test(
       "valid-email",

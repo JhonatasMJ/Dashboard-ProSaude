@@ -5,7 +5,7 @@ export function companyToFormValues(company: ICompany): CompanyFormData {
   return {
     name: company.name,
     taxId: company.taxId,
-    email: company.email,
+    email: company.email ?? "",
     phone: company.phone,
     zipCode: "",
     street: company.street,
@@ -17,10 +17,12 @@ export function companyToFormValues(company: ICompany): CompanyFormData {
 }
 
 export function formToCompanyPayload(data: CompanyFormData): ICompanyPayload {
+  const email = data.email?.trim();
+
   return {
     name: data.name.trim(),
     taxId: data.taxId.trim(),
-    email: data.email?.trim() ?? "",
+    ...(email ? { email } : {}),
     phone: data.phone?.trim() ?? "",
     street: data.street?.trim() ?? "",
     number: data.number?.trim() ?? "",

@@ -1,11 +1,13 @@
 import { createBrowserRouter } from "react-router-dom";
 import { CompaniesProvider } from "@/contexts/companies.context";
+import { ContasProvider } from "@/contexts/contas.context";
 import { EmployeeExamsProvider } from "@/contexts/employee-exams.context";
 import { EmployeesProvider } from "@/contexts/employees.context";
 import { ExamsProvider } from "@/contexts/exams.context";
 import { UsersProvider } from "@/contexts/users.context";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import CompaniesPage from "@/pages/companies";
+import ContasPage from "@/pages/contas";
 import Dashboard from "@/pages/dashboard";
 import EmployeesPage from "@/pages/employees";
 import ExamsPage from "@/pages/exams";
@@ -41,6 +43,15 @@ export const router = createBrowserRouter([
               </CompaniesProvider>
             ),
             handle: { title: "Empresas" },
+          },
+          {
+            path: "contas",
+            element: (
+              <ContasProvider>
+                <ContasPage />
+              </ContasProvider>
+            ),
+            handle: { title: "Contas" },
           },
           {
             path: "exames",

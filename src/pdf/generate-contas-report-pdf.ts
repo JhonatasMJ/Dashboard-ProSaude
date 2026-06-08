@@ -4,31 +4,33 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { PDF_BRAND, PDF_LAYOUT } from "@/pdf/brand-theme";
 import { loadLogoForPdf } from "@/pdf/load-logo-for-pdf";
-import type { GenerateEmployeeExamsReportPdfInput } from "@/pdf/employee-exams-report.types";
+import type { GenerateContasReportPdfInput } from "@/pdf/contas-report.types";
 import { formatDateBr } from "@/shared/helpers/date.helper";
 import { formatCurrency } from "@/shared/helpers/format-currency.helper";
-import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
+import {
+  CONTA_STATUS_LABELS,
+  type ContaStatus,
+} from "@/shared/types/conta-status.types";
+import type { IConta } from "@/shared/interfaces/https/conta";
 
-const REPORT_TITLE = "Relatório de Vínculos";
+const REPORT_TITLE = "Relatório de Contas";
 const BRAND_NAME = "ProSaúde";
 
 const TABLE_HEAD = [
-  "Data",
-  "Hora",
-  "Exame",
-  "Funcionário",
-  "Profissional",
-  "Empresa",
-  "Valor exame",
+  "Nome",
+  "Valor",
+  "Status",
+  "Vencimento",
+  "Pagamento",
 ] as const;
 
-const COLUMN_WIDTH_RATIOS = [0.09, 0.07, 0.2, 0.17, 0.17, 0.18, 0.12] as const;
+const COLUMN_WIDTH_RATIOS = [0.32, 0.14, 0.14, 0.2, 0.2] as const;
 
 const LOGO_DISPLAY = { width: 22, height: 18.6 };
 
 function buildReportFilename(generatedAt: Date): string {
   const stamp = format(generatedAt, "yyyy-MM-dd-HHmm");
-  return `relatorio-vinculos-${stamp}.pdf`;
+  return `relatorio-contas-${stamp}.pdf`;
 }
 
 function getContentWidth(doc: jsPDF): number {
@@ -41,24 +43,22 @@ function getColumnStyles(tableWidth: number) {
       index,
       {
         cellWidth: tableWidth * ratio,
-        ...(index === 1 ? { halign: "center" as const } : {}),
-        ...(index === 6
+        ...(index === 1
           ? { halign: "right" as const, fontStyle: "bold" as const }
           : {}),
+        ...(index === 2 ? { halign: "center" as const } : {}),
       },
     ])
   );
 }
 
-function mapLinkToRow(link: IEmployeeExam): string[] {
+function mapContaToRow(conta: IConta): string[] {
   return [
-    formatDateBr(link.examDate),
-    link.examTime ?? "—",
-    link.exam.name,
-    link.employee.name,
-    link.professionalName,
-    link.employee.company.name,
-    formatCurrency(link.exam.price),
+    conta.nome,
+    formatCurrency(conta.valor),
+    CONTA_STATUS_LABELS[conta.status as ContaStatus] ?? conta.status,
+    formatDateBr(conta.dataVencimento),
+    conta.dataPagamento ? formatDateBr(conta.dataPagamento) : "—",
   ];
 }
 
@@ -179,7 +179,7 @@ function drawInfoSection(
     },
     { label: "Registros", value: String(totalRecords), emphasize: false },
     {
-      label: "Total dos exames",
+      label: "Total das contas",
       value: formatCurrency(totalValue),
       emphasize: true,
     },
@@ -267,7 +267,7 @@ function drawPageFooter(doc: jsPDF, pageNumber: number, pageCount: number) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.text(
-    `${BRAND_NAME} · Relatório de vínculos funcionário–exame`,
+    `${BRAND_NAME} · Relatório de contas`,
     PDF_LAYOUT.marginX,
     footerY + 5.5
   );
@@ -279,22 +279,22 @@ function drawPageFooter(doc: jsPDF, pageNumber: number, pageCount: number) {
   );
 }
 
-export async function generateEmployeeExamsReportPdf(
-  links: IEmployeeExam[],
-  options: GenerateEmployeeExamsReportPdfInput
+export async function generateContasReportPdf(
+  contas: IConta[],
+  options: GenerateContasReportPdfInput
 ): Promise<void> {
   const generatedAt = options.generatedAt ?? new Date();
   const logoDataUrl = await loadLogoForPdf();
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const tableWidth = getContentWidth(doc);
-  const totalExamValue = links.reduce((sum, link) => sum + link.exam.price, 0);
+  const totalValue = contas.reduce((sum, conta) => sum + conta.valor, 0);
 
   drawReportHeader(doc, logoDataUrl);
   const tableStartY = drawInfoSection(
     doc,
     generatedAt,
-    links.length,
-    totalExamValue,
+    contas.length,
+    totalValue,
     options.filterSummary
   );
 
@@ -302,7 +302,7 @@ export async function generateEmployeeExamsReportPdf(
     startY: tableStartY,
     tableWidth,
     head: [TABLE_HEAD as unknown as string[]],
-    body: links.map(mapLinkToRow),
+    body: contas.map(mapContaToRow),
     margin: {
       top: 18,
       left: PDF_LAYOUT.marginX,
@@ -330,9 +330,7 @@ export async function generateEmployeeExamsReportPdf(
       fillColor: PDF_BRAND.surface,
     },
     columnStyles: getColumnStyles(tableWidth),
-    foot: [
-      ["", "", "", "", "", "Total geral", formatCurrency(totalExamValue)],
-    ],
+    foot: [["", "", "", "Total geral", formatCurrency(totalValue)]],
     footStyles: {
       fillColor: PDF_BRAND.primaryLight,
       textColor: PDF_BRAND.secondary,

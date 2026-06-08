@@ -30,6 +30,7 @@ export function DashboardSummary() {
         <DashboardKpiRow
           totals={summary?.totals}
           payments={summary?.payments}
+          financial={summary?.financial}
           isLoading={isLoading}
         />
         <DashboardSecondaryMetrics
