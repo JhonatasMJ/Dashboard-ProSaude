@@ -1,19 +1,26 @@
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  DashboardContext,
-  type DashboardContextValue,
-} from "@/contexts/dashboard-context";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import type { IDashboardSummaryData } from "@/shared/interfaces/https/dashboard-summary";
 import { dashboardService } from "@/shared/services/dashboard.service";
+
+export interface DashboardContextValue {
+  summary: IDashboardSummaryData | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+const DashboardContext = createContext<DashboardContextValue | null>(null);
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -29,7 +36,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       if (showLoading) {
         setIsLoading(true);
       }
-      setError(null);
 
       try {
         const { data } = await dashboardService.getSummary();
@@ -37,6 +43,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         if (isStaleRequest(requestId)) return;
 
         setSummary(data);
+        setError(null);
       } catch (err) {
         if (isStaleRequest(requestId)) return;
 
@@ -54,8 +61,33 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    loadSummary(true);
-  }, [location.pathname, loadSummary]);
+    let active = true;
+    const requestId = startRequest();
+
+    dashboardService
+      .getSummary()
+      .then(({ data }) => {
+        if (!active || isStaleRequest(requestId)) return;
+        setSummary(data);
+        setError(null);
+      })
+      .catch((err) => {
+        if (!active || isStaleRequest(requestId)) return;
+        setSummary(null);
+        setError(
+          getApiErrorMessage(err, "Não foi possível carregar o resumo do painel.")
+        );
+      })
+      .finally(() => {
+        if (active && !isStaleRequest(requestId)) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [location.pathname, startRequest, isStaleRequest]);
 
   const refetch = useCallback(() => loadSummary(true), [loadSummary]);
 
@@ -74,4 +106,14 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       {children}
     </DashboardContext.Provider>
   );
+}
+
+export function useDashboard() {
+  const context = useContext(DashboardContext);
+
+  if (!context) {
+    throw new Error("useDashboard deve ser usado dentro de DashboardProvider");
+  }
+
+  return context;
 }

@@ -1,11 +1,12 @@
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import { ExamsContext, type ExamsContextValue } from "@/contexts/exams-context";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
   BULK_LIST_PAGE_SIZE,
@@ -27,6 +28,28 @@ import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import { examService } from "@/shared/services/exam.service";
 import type { ExamFormData } from "@/types/exam-form.types";
 
+export interface ExamsContextValue {
+  exams: IExam[];
+  meta: IPaginationMeta | null;
+  companies: ICompany[];
+  isLoading: boolean;
+  isLoadingFilters: boolean;
+  isSubmitting: boolean;
+  error: string | null;
+  nameFilter: string;
+  companyIdFilter: string;
+  page: number;
+  setNameFilter: (value: string) => void;
+  setCompanyIdFilter: (value: string) => void;
+  setPage: (page: number) => void;
+  refetch: () => Promise<void>;
+  createExam: (data: ExamFormData) => Promise<void>;
+  updateExam: (id: string, data: ExamFormData) => Promise<void>;
+  deleteExam: (id: string) => Promise<void>;
+}
+
+const ExamsContext = createContext<ExamsContextValue | null>(null);
+
 export function ExamsProvider({ children }: { children: ReactNode }) {
   const { startRequest, isStaleRequest, invalidateRequests } =
     useRequestGeneration();
@@ -46,6 +69,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => {
       setDebouncedName(nameFilter.trim());
       setPage(1);
+      setIsLoading(true);
     }, FILTER_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
@@ -55,6 +79,11 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
     setCompanyIdFilter(value);
     setPage(1);
     setIsLoading(true);
+  }, []);
+
+  const handlePageChange = useCallback((nextPage: number) => {
+    setIsLoading(true);
+    setPage(nextPage);
   }, []);
 
   useEffect(() => {
@@ -88,7 +117,6 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
       if (showLoading) {
         setIsLoading(true);
       }
-      setError(null);
 
       try {
         const response = await examService.list({
@@ -102,6 +130,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
 
         setExams(response.data);
         setMeta(response.meta);
+        setError(null);
       } catch (err) {
         if (isStaleRequest(requestId)) return;
 
@@ -122,9 +151,6 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     const requestId = startRequest();
-
-    setIsLoading(true);
-    setError(null);
 
     examService
       .list({
@@ -180,6 +206,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
         if (page === 1) {
           await fetchExams();
         } else {
+          setIsLoading(true);
           setPage(1);
         }
       } finally {
@@ -239,6 +266,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
         setMeta(nextMeta);
 
         if (isLastOnPage && page > 1) {
+          setIsLoading(true);
           setPage((current) => current - 1);
         } else {
           await fetchExams();
@@ -264,7 +292,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
       page,
       setNameFilter,
       setCompanyIdFilter: handleCompanyFilterChange,
-      setPage,
+      setPage: handlePageChange,
       refetch: () => fetchExams(true),
       createExam,
       updateExam,
@@ -282,6 +310,7 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
       companyIdFilter,
       page,
       handleCompanyFilterChange,
+      handlePageChange,
       fetchExams,
       createExam,
       updateExam,
@@ -292,4 +321,14 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
   return (
     <ExamsContext.Provider value={value}>{children}</ExamsContext.Provider>
   );
+}
+
+export function useExams() {
+  const context = useContext(ExamsContext);
+
+  if (!context) {
+    throw new Error("useExams deve ser usado dentro de ExamsProvider");
+  }
+
+  return context;
 }

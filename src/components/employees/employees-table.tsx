@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
-import { useEmployees } from "@/contexts/employees-context";
+import { useEmployees } from "@/contexts/employees.context";
 import { cn } from "@/lib/utils";
 import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
 import {

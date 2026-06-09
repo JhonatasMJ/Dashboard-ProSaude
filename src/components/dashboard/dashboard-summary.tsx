@@ -5,7 +5,7 @@ import { DashboardSection } from "@/components/dashboard/dashboard-section";
 import { RecentEmployeeExamsSection } from "@/components/dashboard/recent-employee-exams-section";
 import { SummaryFinancialSection } from "@/components/dashboard/summary-financial-section";
 import { Button } from "@/components/ui/button";
-import { useDashboard } from "@/hooks/use-dashboard";
+import { useDashboard } from "@/contexts/dashboard.context";
 
 export function DashboardSummary() {
   const { summary, isLoading, error, refetch } = useDashboard();

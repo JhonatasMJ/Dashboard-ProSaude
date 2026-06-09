@@ -1,14 +1,12 @@
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import {
-  CompaniesContext,
-  type CompaniesContextValue,
-} from "@/contexts/companies-context";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
   FILTER_DEBOUNCE_MS,
@@ -21,6 +19,24 @@ import type { ICompany } from "@/shared/interfaces/https/company";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import { companyService } from "@/shared/services/company.service";
 import type { CompanyFormData } from "@/types/company-form.types";
+
+export interface CompaniesContextValue {
+  companies: ICompany[];
+  meta: IPaginationMeta | null;
+  isLoading: boolean;
+  isSubmitting: boolean;
+  error: string | null;
+  nameFilter: string;
+  page: number;
+  setNameFilter: (value: string) => void;
+  setPage: (page: number) => void;
+  refetch: () => Promise<void>;
+  createCompany: (data: CompanyFormData) => Promise<void>;
+  updateCompany: (id: string, data: CompanyFormData) => Promise<void>;
+  deleteCompany: (id: string) => Promise<void>;
+}
+
+const CompaniesContext = createContext<CompaniesContextValue | null>(null);
 
 export function CompaniesProvider({ children }: { children: ReactNode }) {
   const { startRequest, isStaleRequest, invalidateRequests } =
@@ -38,10 +54,16 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => {
       setDebouncedName(nameFilter.trim());
       setPage(1);
+      setIsLoading(true);
     }, FILTER_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
   }, [nameFilter]);
+
+  const handlePageChange = useCallback((nextPage: number) => {
+    setIsLoading(true);
+    setPage(nextPage);
+  }, []);
 
   const fetchCompanies = useCallback(
     async (showLoading = false) => {
@@ -50,7 +72,6 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
       if (showLoading) {
         setIsLoading(true);
       }
-      setError(null);
 
       try {
         const response = await companyService.list({
@@ -63,6 +84,7 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
 
         setCompanies(response.data);
         setMeta(response.meta);
+        setError(null);
       } catch (err) {
         if (isStaleRequest(requestId)) return;
 
@@ -83,9 +105,6 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     const requestId = startRequest();
-
-    setIsLoading(true);
-    setError(null);
 
     companyService
       .list({
@@ -127,6 +146,7 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
         if (page === 1) {
           await fetchCompanies();
         } else {
+          setIsLoading(true);
           setPage(1);
         }
       } finally {
@@ -167,6 +187,7 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
         setMeta(nextMeta);
 
         if (isLastOnPage && page > 1) {
+          setIsLoading(true);
           setPage((current) => current - 1);
         } else {
           await fetchCompanies();
@@ -188,7 +209,7 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
       nameFilter,
       page,
       setNameFilter,
-      setPage,
+      setPage: handlePageChange,
       refetch: () => fetchCompanies(true),
       createCompany,
       updateCompany,
@@ -202,6 +223,7 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
       error,
       nameFilter,
       page,
+      handlePageChange,
       fetchCompanies,
       createCompany,
       updateCompany,
@@ -214,4 +236,14 @@ export function CompaniesProvider({ children }: { children: ReactNode }) {
       {children}
     </CompaniesContext.Provider>
   );
+}
+
+export function useCompanies() {
+  const context = useContext(CompaniesContext);
+
+  if (!context) {
+    throw new Error("useCompanies deve ser usado dentro de CompaniesProvider");
+  }
+
+  return context;
 }

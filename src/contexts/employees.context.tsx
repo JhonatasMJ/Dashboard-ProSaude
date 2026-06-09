@@ -1,14 +1,12 @@
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import {
-  EmployeesContext,
-  type EmployeesContextValue,
-} from "@/contexts/employees-context";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
   BULK_LIST_PAGE_SIZE,
@@ -27,6 +25,28 @@ import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import { companyService } from "@/shared/services/company.service";
 import { employeeService } from "@/shared/services/employee.service";
 import type { EmployeeFormData } from "@/types/employee-form.types";
+
+export interface EmployeesContextValue {
+  employees: IEmployee[];
+  meta: IPaginationMeta | null;
+  companies: ICompany[];
+  isLoading: boolean;
+  isLoadingFilters: boolean;
+  isSubmitting: boolean;
+  error: string | null;
+  nameFilter: string;
+  companyIdFilter: string;
+  page: number;
+  setNameFilter: (value: string) => void;
+  setCompanyIdFilter: (value: string) => void;
+  setPage: (page: number) => void;
+  refetch: () => Promise<void>;
+  createEmployee: (data: EmployeeFormData) => Promise<void>;
+  updateEmployee: (id: string, data: EmployeeFormData) => Promise<void>;
+  deleteEmployee: (id: string) => Promise<void>;
+}
+
+const EmployeesContext = createContext<EmployeesContextValue | null>(null);
 
 export function EmployeesProvider({ children }: { children: ReactNode }) {
   const { startRequest, isStaleRequest, invalidateRequests } =
@@ -47,6 +67,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => {
       setDebouncedName(nameFilter.trim());
       setPage(1);
+      setIsLoading(true);
     }, FILTER_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
@@ -55,21 +76,36 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
   const handleCompanyFilterChange = useCallback((value: string) => {
     setCompanyIdFilter(value);
     setPage(1);
+    setIsLoading(true);
   }, []);
 
-  const fetchFilterOptions = useCallback(async () => {
-    setIsLoadingFilters(true);
-    try {
-      const { data } = await companyService.list({
-        page: 1,
-        pageSize: BULK_LIST_PAGE_SIZE,
+  const handlePageChange = useCallback((nextPage: number) => {
+    setIsLoading(true);
+    setPage(nextPage);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    companyService
+      .list({ page: 1, pageSize: BULK_LIST_PAGE_SIZE })
+      .then((response) => {
+        if (!active) return;
+        setCompanies(response.data);
+      })
+      .catch(() => {
+        if (!active) return;
+        setCompanies([]);
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingFilters(false);
+        }
       });
-      setCompanies(data);
-    } catch {
-      setCompanies([]);
-    } finally {
-      setIsLoadingFilters(false);
-    }
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const fetchEmployees = useCallback(
@@ -79,7 +115,6 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
       if (showLoading) {
         setIsLoading(true);
       }
-      setError(null);
 
       try {
         const response = await employeeService.list({
@@ -93,6 +128,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
 
         setEmployees(response.data);
         setMeta(response.meta);
+        setError(null);
       } catch (err) {
         if (isStaleRequest(requestId)) return;
 
@@ -111,15 +147,8 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    fetchFilterOptions();
-  }, [fetchFilterOptions]);
-
-  useEffect(() => {
     let active = true;
     const requestId = startRequest();
-
-    setIsLoading(true);
-    setError(null);
 
     employeeService
       .list({
@@ -162,6 +191,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
         if (page === 1) {
           await fetchEmployees();
         } else {
+          setIsLoading(true);
           setPage(1);
         }
       } finally {
@@ -202,6 +232,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
         setMeta(nextMeta);
 
         if (isLastOnPage && page > 1) {
+          setIsLoading(true);
           setPage((current) => current - 1);
         } else {
           await fetchEmployees();
@@ -227,7 +258,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
       page,
       setNameFilter,
       setCompanyIdFilter: handleCompanyFilterChange,
-      setPage,
+      setPage: handlePageChange,
       refetch: () => fetchEmployees(true),
       createEmployee,
       updateEmployee,
@@ -245,6 +276,7 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
       companyIdFilter,
       page,
       handleCompanyFilterChange,
+      handlePageChange,
       fetchEmployees,
       createEmployee,
       updateEmployee,
@@ -257,4 +289,14 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
       {children}
     </EmployeesContext.Provider>
   );
+}
+
+export function useEmployees() {
+  const context = useContext(EmployeesContext);
+
+  if (!context) {
+    throw new Error("useEmployees deve ser usado dentro de EmployeesProvider");
+  }
+
+  return context;
 }

@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useContas } from "@/contexts/contas-context";
+import { useContas } from "@/contexts/contas.context";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import type { IConta } from "@/shared/interfaces/https/conta";
 import type { ContaFormData } from "@/types/conta-form.types";

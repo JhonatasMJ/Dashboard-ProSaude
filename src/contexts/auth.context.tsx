@@ -2,14 +2,11 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import {
-  clearAuthStorage,
-} from "@/shared/helpers/auth-storage.helper";
+import { clearAuthStorage } from "@/shared/helpers/auth-storage.helper";
 import { STORAGE_USER_KEY } from "@/shared/helpers/axios.helper";
 import type {
   IAuthenticateResponse,
@@ -42,13 +39,8 @@ function getStoredUser(): IUser | null {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<IUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setUser(getStoredUser());
-    setIsLoading(false);
-  }, []);
+  const [user, setUser] = useState<IUser | null>(() => getStoredUser());
+  const [isLoading] = useState(false);
 
   const login = useCallback(async (credentials: ILoginRequest) => {
     const { user: authenticatedUser } = await authService.login(credentials);

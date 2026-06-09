@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
 import { useAuth } from "@/contexts/auth.context";
-import { useUsers } from "@/contexts/users-context";
+import { useUsers } from "@/contexts/users.context";
 import { cn } from "@/lib/utils";
 import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
 import { FILTER_INPUT_CLASS } from "@/shared/constants/filter-field.constants";

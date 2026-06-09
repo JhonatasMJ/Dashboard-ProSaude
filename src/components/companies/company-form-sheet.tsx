@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useCompanies } from "@/contexts/companies-context";
+import { useCompanies } from "@/contexts/companies.context";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import type { ICompany } from "@/shared/interfaces/https/company";
 import type { CompanyFormData } from "@/types/company-form.types";

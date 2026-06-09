@@ -10,7 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useUsers } from "@/contexts/users-context";
+import { useUsers } from "@/contexts/users.context";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import type { UserRegisterFormData } from "@/types/user-register-form.types";
 

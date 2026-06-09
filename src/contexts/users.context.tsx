@@ -1,11 +1,12 @@
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import { UsersContext, type UsersContextValue } from "@/contexts/users-context";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
   FILTER_DEBOUNCE_MS,
@@ -18,6 +19,23 @@ import type { IUser } from "@/shared/interfaces/https/user";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import { userService } from "@/shared/services/user.service";
 import type { UserRegisterFormData } from "@/types/user-register-form.types";
+
+export interface UsersContextValue {
+  users: IUser[];
+  meta: IPaginationMeta | null;
+  isLoading: boolean;
+  isSubmitting: boolean;
+  error: string | null;
+  nameFilter: string;
+  page: number;
+  setNameFilter: (value: string) => void;
+  setPage: (page: number) => void;
+  refetch: () => Promise<void>;
+  createUser: (data: UserRegisterFormData) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
+}
+
+const UsersContext = createContext<UsersContextValue | null>(null);
 
 export function UsersProvider({ children }: { children: ReactNode }) {
   const { startRequest, isStaleRequest, invalidateRequests } =
@@ -35,10 +53,16 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => {
       setDebouncedName(nameFilter.trim());
       setPage(1);
+      setIsLoading(true);
     }, FILTER_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
   }, [nameFilter]);
+
+  const handlePageChange = useCallback((nextPage: number) => {
+    setIsLoading(true);
+    setPage(nextPage);
+  }, []);
 
   const fetchUsers = useCallback(
     async (showLoading = false) => {
@@ -47,7 +71,6 @@ export function UsersProvider({ children }: { children: ReactNode }) {
       if (showLoading) {
         setIsLoading(true);
       }
-      setError(null);
 
       try {
         const response = await userService.list({
@@ -60,6 +83,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
 
         setUsers(response.data);
         setMeta(response.meta);
+        setError(null);
       } catch (err) {
         if (isStaleRequest(requestId)) return;
 
@@ -80,9 +104,6 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     const requestId = startRequest();
-
-    setIsLoading(true);
-    setError(null);
 
     userService
       .list({
@@ -124,6 +145,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
         if (page === 1) {
           await fetchUsers();
         } else {
+          setIsLoading(true);
           setPage(1);
         }
       } finally {
@@ -150,6 +172,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
         setMeta(nextMeta);
 
         if (isLastOnPage && page > 1) {
+          setIsLoading(true);
           setPage((current) => current - 1);
         } else {
           await fetchUsers();
@@ -171,7 +194,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
       nameFilter,
       page,
       setNameFilter,
-      setPage,
+      setPage: handlePageChange,
       refetch: () => fetchUsers(true),
       createUser,
       deleteUser,
@@ -184,6 +207,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
       error,
       nameFilter,
       page,
+      handlePageChange,
       fetchUsers,
       createUser,
       deleteUser,
@@ -193,4 +217,14 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   return (
     <UsersContext.Provider value={value}>{children}</UsersContext.Provider>
   );
+}
+
+export function useUsers() {
+  const context = useContext(UsersContext);
+
+  if (!context) {
+    throw new Error("useUsers deve ser usado dentro de UsersProvider");
+  }
+
+  return context;
 }

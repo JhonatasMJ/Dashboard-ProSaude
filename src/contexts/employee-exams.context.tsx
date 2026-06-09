@@ -1,14 +1,12 @@
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import {
-  EmployeeExamsContext,
-  type EmployeeExamsContextValue,
-} from "@/contexts/employee-exams-context";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
   FILTER_DEBOUNCE_MS,
@@ -33,6 +31,62 @@ import { examService } from "@/shared/services/exam.service";
 import type { EmployeeExamsReportListParams } from "@/pdf/employee-exams-report.types";
 import type { PaymentStatus } from "@/shared/types/payment-status.types";
 import type { EmployeeExamFormData } from "@/types/employee-exam-form.types";
+
+export interface EmployeeExamsContextValue {
+  links: IEmployeeExam[];
+  meta: IPaginationMeta | null;
+  companies: ICompany[];
+  employees: IEmployee[];
+  exams: IExam[];
+  isLoading: boolean;
+  isLoadingFilters: boolean;
+  isSubmitting: boolean;
+  error: string | null;
+  professionalNameFilter: string;
+  companyIdFilter: string;
+  employeeIdFilter: string;
+  examIdFilter: string;
+  paymentStatusFilter: PaymentStatus | "";
+  examDateFromFilter: string;
+  examDateToFilter: string;
+  exportListParams: EmployeeExamsReportListParams;
+  page: number;
+  setProfessionalNameFilter: (value: string) => void;
+  setCompanyIdFilter: (value: string) => void;
+  setEmployeeIdFilter: (value: string) => void;
+  setExamIdFilter: (value: string) => void;
+  setPaymentStatusFilter: (value: PaymentStatus | "") => void;
+  setExamDateFromFilter: (value: string) => void;
+  setExamDateToFilter: (value: string) => void;
+  setPage: (page: number) => void;
+  refetch: () => Promise<void>;
+  refetchFilterOptions: () => Promise<void>;
+  createLink: (data: EmployeeExamFormData) => Promise<void>;
+  updateLink: (id: string, data: EmployeeExamFormData) => Promise<void>;
+  deleteLink: (id: string) => Promise<void>;
+}
+
+const EmployeeExamsContext = createContext<EmployeeExamsContextValue | null>(
+  null
+);
+
+async function loadFilterOptionsData(companyIdFilter: string) {
+  return Promise.all([
+    fetchAllPaginated((page, pageSize) =>
+      companyService.list({ page, pageSize })
+    ),
+    fetchAllPaginated((page, pageSize) =>
+      employeeService.list({
+        page,
+        pageSize,
+        ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
+      })
+    ),
+    fetchAllPaginated((page, pageSize) =>
+      examService.list({ page, pageSize })
+    ),
+  ]);
+}
 
 export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
   const { startRequest, isStaleRequest, invalidateRequests } =
@@ -63,14 +117,12 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => {
       const next = professionalNameFilter.trim();
       setDebouncedProfessionalName((prev) => (prev === next ? prev : next));
+      setPage(1);
+      setIsLoading(true);
     }, FILTER_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
   }, [professionalNameFilter]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedProfessionalName]);
 
   const handleCompanyFilterChange = useCallback((value: string) => {
     setCompanyIdFilter(value);
@@ -122,21 +174,8 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
     setIsLoadingFilters(true);
 
     try {
-      const [companiesData, employeesData, examsData] = await Promise.all([
-        fetchAllPaginated((page, pageSize) =>
-          companyService.list({ page, pageSize })
-        ),
-        fetchAllPaginated((page, pageSize) =>
-          employeeService.list({
-            page,
-            pageSize,
-            ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
-          })
-        ),
-        fetchAllPaginated((page, pageSize) =>
-          examService.list({ page, pageSize })
-        ),
-      ]);
+      const [companiesData, employeesData, examsData] =
+        await loadFilterOptionsData(companyIdFilter);
 
       setCompanies(companiesData);
       setEmployees(employeesData);
@@ -151,8 +190,31 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
   }, [companyIdFilter]);
 
   useEffect(() => {
-    void refetchFilterOptions();
-  }, [refetchFilterOptions]);
+    let active = true;
+
+    loadFilterOptionsData(companyIdFilter)
+      .then(([companiesData, employeesData, examsData]) => {
+        if (!active) return;
+        setCompanies(companiesData);
+        setEmployees(employeesData);
+        setExams(examsData);
+      })
+      .catch(() => {
+        if (!active) return;
+        setCompanies([]);
+        setEmployees([]);
+        setExams([]);
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingFilters(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [companyIdFilter]);
 
   const activeEmployeeIdFilter = useMemo(() => {
     if (!employeeIdFilter || !companyIdFilter) return employeeIdFilter;
@@ -202,7 +264,6 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       if (showLoading) {
         setIsLoading(true);
       }
-      setError(null);
 
       try {
         const response = await employeeExamService.list(listParams);
@@ -211,6 +272,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
 
         setLinks(response.data);
         setMeta(response.meta);
+        setError(null);
       } catch (err) {
         if (isStaleRequest(requestId)) return;
 
@@ -234,9 +296,6 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     const requestId = startRequest();
-
-    setIsLoading(true);
-    setError(null);
 
     employeeExamService
       .list(listParams)
@@ -280,6 +339,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
         if (page === 1) {
           await fetchLinks();
         } else {
+          setIsLoading(true);
           setPage(1);
         }
       } finally {
@@ -323,6 +383,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
         setMeta(nextMeta);
 
         if (isLastOnPage && page > 1) {
+          setIsLoading(true);
           setPage((current) => current - 1);
         } else {
           await fetchLinks();
@@ -407,4 +468,16 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       {children}
     </EmployeeExamsContext.Provider>
   );
+}
+
+export function useEmployeeExams() {
+  const context = useContext(EmployeeExamsContext);
+
+  if (!context) {
+    throw new Error(
+      "useEmployeeExams deve ser usado dentro de EmployeeExamsProvider"
+    );
+  }
+
+  return context;
 }

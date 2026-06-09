@@ -1,11 +1,12 @@
 import {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
-import { ContasContext, type ContasContextValue } from "@/contexts/contas-context";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
   FILTER_DEBOUNCE_MS,
@@ -20,6 +21,35 @@ import type { ContaStatus } from "@/shared/types/conta-status.types";
 import { contaService } from "@/shared/services/conta.service";
 import type { ContasReportListParams } from "@/pdf/contas-report.types";
 import type { ContaFormData } from "@/types/conta-form.types";
+
+export interface ContasContextValue {
+  contas: IConta[];
+  meta: IPaginationMeta | null;
+  isLoading: boolean;
+  isSubmitting: boolean;
+  error: string | null;
+  nomeFilter: string;
+  statusFilter: ContaStatus | "";
+  dataVencimentoFromFilter: string;
+  dataVencimentoToFilter: string;
+  dataPagamentoFromFilter: string;
+  dataPagamentoToFilter: string;
+  exportListParams: ContasReportListParams;
+  page: number;
+  setNomeFilter: (value: string) => void;
+  setStatusFilter: (value: ContaStatus | "") => void;
+  setDataVencimentoFromFilter: (value: string) => void;
+  setDataVencimentoToFilter: (value: string) => void;
+  setDataPagamentoFromFilter: (value: string) => void;
+  setDataPagamentoToFilter: (value: string) => void;
+  setPage: (page: number) => void;
+  refetch: () => Promise<void>;
+  createConta: (data: ContaFormData) => Promise<void>;
+  updateConta: (id: string, data: ContaFormData) => Promise<void>;
+  deleteConta: (id: string) => Promise<void>;
+}
+
+const ContasContext = createContext<ContasContextValue | null>(null);
 
 export function ContasProvider({ children }: { children: ReactNode }) {
   const { startRequest, isStaleRequest, invalidateRequests } =
@@ -42,14 +72,12 @@ export function ContasProvider({ children }: { children: ReactNode }) {
     const timer = window.setTimeout(() => {
       const next = nomeFilter.trim();
       setDebouncedNome((prev) => (prev === next ? prev : next));
+      setPage(1);
+      setIsLoading(true);
     }, FILTER_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timer);
   }, [nomeFilter]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedNome]);
 
   const handleStatusFilterChange = useCallback((value: ContaStatus | "") => {
     setStatusFilter(value);
@@ -129,7 +157,6 @@ export function ContasProvider({ children }: { children: ReactNode }) {
       if (showLoading) {
         setIsLoading(true);
       }
-      setError(null);
 
       try {
         const response = await contaService.list(listParams);
@@ -138,6 +165,7 @@ export function ContasProvider({ children }: { children: ReactNode }) {
 
         setContas(response.data);
         setMeta(response.meta);
+        setError(null);
       } catch (err) {
         if (isStaleRequest(requestId)) return;
 
@@ -158,9 +186,6 @@ export function ContasProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     const requestId = startRequest();
-
-    setIsLoading(true);
-    setError(null);
 
     contaService
       .list(listParams)
@@ -198,6 +223,7 @@ export function ContasProvider({ children }: { children: ReactNode }) {
         if (page === 1) {
           await fetchContas();
         } else {
+          setIsLoading(true);
           setPage(1);
         }
       } finally {
@@ -238,6 +264,7 @@ export function ContasProvider({ children }: { children: ReactNode }) {
         setMeta(nextMeta);
 
         if (isLastOnPage && page > 1) {
+          setIsLoading(true);
           setPage((current) => current - 1);
         } else {
           await fetchContas();
@@ -306,4 +333,14 @@ export function ContasProvider({ children }: { children: ReactNode }) {
   return (
     <ContasContext.Provider value={value}>{children}</ContasContext.Provider>
   );
+}
+
+export function useContas() {
+  const context = useContext(ContasContext);
+
+  if (!context) {
+    throw new Error("useContas deve ser usado dentro de ContasProvider");
+  }
+
+  return context;
 }

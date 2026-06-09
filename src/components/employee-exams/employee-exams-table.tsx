@@ -27,7 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
-import { useEmployeeExams } from "@/contexts/employee-exams-context";
+import { useEmployeeExams } from "@/contexts/employee-exams.context";
 import {
   buildEmployeeExamsFilterSummary,
   fetchEmployeeExamsForReport,
