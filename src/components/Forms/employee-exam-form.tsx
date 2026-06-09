@@ -1,5 +1,5 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
 import { DatePickerLabel } from "@/components/date-picker-label";
 import { InputLabel } from "@/components/input-label";
@@ -12,17 +12,18 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { employeeExamSchema } from "@/schemas/employee-exam.schema";
 import { employeeExamToFormValues } from "@/shared/helpers/employee-exam-form.helper";
 import { dateToDateOnly } from "@/shared/helpers/date.helper";
+import { fetchAllPaginated } from "@/shared/helpers/fetch-all-paginated.helper";
 import { birthDateMask, examTimeMask } from "@/shared/helpers/input-masks.helper";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
 import type { IExam } from "@/shared/interfaces/https/exam";
+import { examService } from "@/shared/services/exam.service";
 import type { EmployeeExamFormData } from "@/types/employee-exam-form.types";
 import { cn } from "@/lib/utils";
 
 interface EmployeeExamFormProps {
   defaultValues?: IEmployeeExam;
   employees: IEmployee[];
-  exams: IExam[];
   isSubmitting?: boolean;
   submitLabel: string;
   formId?: string;
@@ -71,7 +72,6 @@ function FormSection({
 export function EmployeeExamForm({
   defaultValues,
   employees,
-  exams,
   isSubmitting = false,
   submitLabel,
   formId = "employee-exam-form",
@@ -122,15 +122,45 @@ export function EmployeeExamForm({
     [employees, employeeIdValue]
   );
 
-  const examsForEmployee = useMemo(() => {
-    if (!selectedEmployee) {
-      return [];
+  const selectedCompanyId = selectedEmployee?.company?.id;
+
+  const [examsForCompany, setExamsForCompany] = useState<IExam[]>([]);
+  const [isLoadingCompanyExams, setIsLoadingCompanyExams] = useState(false);
+
+  useEffect(() => {
+    if (!selectedCompanyId) {
+      setExamsForCompany([]);
+      return;
     }
 
-    return exams.filter(
-      (exam) => exam.company.id === selectedEmployee.company.id
-    );
-  }, [exams, selectedEmployee]);
+    let active = true;
+    setIsLoadingCompanyExams(true);
+
+    fetchAllPaginated((page, pageSize) =>
+      examService.list({ page, pageSize, companyId: selectedCompanyId })
+    )
+      .then((data) => {
+        if (active) {
+          setExamsForCompany(data);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setExamsForCompany([]);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingCompanyExams(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedCompanyId]);
+
+  const examsForEmployee = examsForCompany;
 
   useEffect(() => {
     const validExamIds = new Set(examsForEmployee.map((exam) => exam.id));
@@ -158,9 +188,11 @@ export function EmployeeExamForm({
 
   const examPlaceholder = !selectedEmployee
     ? "Selecione o funcionário primeiro"
-    : examsForEmployee.length === 0
-      ? "Nenhum exame para esta empresa"
-      : "Selecione o(s) exame(s)";
+    : isLoadingCompanyExams
+      ? "Carregando exames..."
+      : examsForEmployee.length === 0
+        ? "Nenhum exame para esta empresa"
+        : "Selecione o(s) exame(s)";
 
   return (
     <form
@@ -208,7 +240,12 @@ export function EmployeeExamForm({
                   options={examOptions}
                   placeholder={examPlaceholder}
                   searchPlaceholder="Buscar exame..."
-                  disabled={examsForEmployee.length === 0 || isSubmitting}
+                  disabled={
+                    !selectedEmployee ||
+                    isLoadingCompanyExams ||
+                    examsForEmployee.length === 0 ||
+                    isSubmitting
+                  }
                   aria-invalid={!!fieldState.error}
                 />
                 {fieldState.error?.message && (
@@ -226,7 +263,12 @@ export function EmployeeExamForm({
             label="Exames (catálogo)"
             options={examOptions}
             placeholder={examPlaceholder}
-            disabled={examsForEmployee.length === 0 || isSubmitting}
+            disabled={
+              !selectedEmployee ||
+              isLoadingCompanyExams ||
+              examsForEmployee.length === 0 ||
+              isSubmitting
+            }
           />
         )}
 

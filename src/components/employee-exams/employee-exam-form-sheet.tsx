@@ -32,7 +32,6 @@ export function EmployeeExamFormSheet({
     updateLink,
     isSubmitting,
     employees,
-    exams,
   } = useEmployeeExams();
   const isEditing = !!link;
 
@@ -90,7 +89,6 @@ export function EmployeeExamFormSheet({
             variant="sheet"
             defaultValues={link ?? undefined}
             employees={employees}
-            exams={exams}
             isSubmitting={isSubmitting}
             submitLabel={isEditing ? "Salvar alterações" : "Cadastrar vínculo"}
             onSubmit={handleSubmit}

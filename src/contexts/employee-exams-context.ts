@@ -36,6 +36,7 @@ export interface EmployeeExamsContextValue {
   setExamDateToFilter: (value: string) => void;
   setPage: (page: number) => void;
   refetch: () => Promise<void>;
+  refetchFilterOptions: () => Promise<void>;
   createLink: (data: EmployeeExamFormData) => Promise<void>;
   updateLink: (id: string, data: EmployeeExamFormData) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;

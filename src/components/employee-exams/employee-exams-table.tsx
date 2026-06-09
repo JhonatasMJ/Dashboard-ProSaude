@@ -194,6 +194,7 @@ export function EmployeeExamsTable() {
     isLoadingFilters,
     error,
     refetch,
+    refetchFilterOptions,
     deleteLink,
     isSubmitting,
     professionalNameFilter,
@@ -235,11 +236,13 @@ export function EmployeeExamsTable() {
   const canCreate = employees.length > 0 && exams.length > 0;
 
   const openCreate = () => {
+    void refetchFilterOptions();
     setEditingLink(null);
     setFormOpen(true);
   };
 
   const openEdit = (link: IEmployeeExam) => {
+    void refetchFilterOptions();
     setEditingLink(link);
     setFormOpen(true);
   };

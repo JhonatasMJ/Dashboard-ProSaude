@@ -11,11 +11,11 @@ import {
 } from "@/contexts/employee-exams-context";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
-  BULK_LIST_PAGE_SIZE,
   FILTER_DEBOUNCE_MS,
   TABLE_PAGE_SIZE,
 } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
+import { fetchAllPaginated } from "@/shared/helpers/fetch-all-paginated.helper";
 import {
   formToEmployeeExamCreatePayloads,
   formToEmployeeExamUpdatePayload,
@@ -118,46 +118,41 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
     setPage(nextPage);
   }, []);
 
-  useEffect(() => {
-    let active = true;
+  const refetchFilterOptions = useCallback(async () => {
+    setIsLoadingFilters(true);
 
-    Promise.all([
-      companyService.list({
-        page: 1,
-        pageSize: BULK_LIST_PAGE_SIZE,
-      }),
-      employeeService.list({
-        page: 1,
-        pageSize: BULK_LIST_PAGE_SIZE,
-        ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
-      }),
-      examService.list({
-        page: 1,
-        pageSize: BULK_LIST_PAGE_SIZE,
-      }),
-    ])
-      .then(([companiesResponse, employeesResponse, examsResponse]) => {
-        if (!active) return;
-        setCompanies(companiesResponse.data);
-        setEmployees(employeesResponse.data);
-        setExams(examsResponse.data);
-      })
-      .catch(() => {
-        if (!active) return;
-        setCompanies([]);
-        setEmployees([]);
-        setExams([]);
-      })
-      .finally(() => {
-        if (active) {
-          setIsLoadingFilters(false);
-        }
-      });
+    try {
+      const [companiesData, employeesData, examsData] = await Promise.all([
+        fetchAllPaginated((page, pageSize) =>
+          companyService.list({ page, pageSize })
+        ),
+        fetchAllPaginated((page, pageSize) =>
+          employeeService.list({
+            page,
+            pageSize,
+            ...(companyIdFilter ? { companyId: companyIdFilter } : {}),
+          })
+        ),
+        fetchAllPaginated((page, pageSize) =>
+          examService.list({ page, pageSize })
+        ),
+      ]);
 
-    return () => {
-      active = false;
-    };
+      setCompanies(companiesData);
+      setEmployees(employeesData);
+      setExams(examsData);
+    } catch {
+      setCompanies([]);
+      setEmployees([]);
+      setExams([]);
+    } finally {
+      setIsLoadingFilters(false);
+    }
   }, [companyIdFilter]);
+
+  useEffect(() => {
+    void refetchFilterOptions();
+  }, [refetchFilterOptions]);
 
   const activeEmployeeIdFilter = useMemo(() => {
     if (!employeeIdFilter || !companyIdFilter) return employeeIdFilter;
@@ -368,6 +363,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       setExamDateToFilter: handleExamDateToChange,
       setPage: handlePageChange,
       refetch: () => fetchLinks(true),
+      refetchFilterOptions,
       createLink,
       updateLink,
       deleteLink,
@@ -399,6 +395,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       handleExamDateToChange,
       handlePageChange,
       fetchLinks,
+      refetchFilterOptions,
       createLink,
       updateLink,
       deleteLink,
