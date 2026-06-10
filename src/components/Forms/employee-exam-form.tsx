@@ -1,14 +1,12 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
+import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { DatePickerLabel } from "@/components/date-picker-label";
 import { InputLabel } from "@/components/input-label";
 import { MaskedInputLabel } from "@/components/masked-input-label";
 import { MultiSelectLabel } from "@/components/multi-select-label";
 import { SelectLabel } from "@/components/select-label";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import { employeeExamSchema } from "@/schemas/employee-exam.schema";
 import { employeeExamToFormValues } from "@/shared/helpers/employee-exam-form.helper";
 import { dateToDateOnly } from "@/shared/helpers/date.helper";
@@ -122,7 +120,8 @@ export function EmployeeExamForm({
     [employees, employeeIdValue]
   );
 
-  const selectedCompanyId = selectedEmployee?.company?.id;
+  const selectedCompanyId =
+    selectedEmployee?.company?.id ?? defaultValues?.employee.company.id;
 
   const [examsForCompany, setExamsForCompany] = useState<IExam[]>([]);
   const [isLoadingCompanyExams, setIsLoadingCompanyExams] = useState(false);
@@ -163,6 +162,10 @@ export function EmployeeExamForm({
   const examsForEmployee = examsForCompany;
 
   useEffect(() => {
+    if (isLoadingCompanyExams || examsForEmployee.length === 0) {
+      return;
+    }
+
     const validExamIds = new Set(examsForEmployee.map((exam) => exam.id));
     const currentExamIds = getValues("examIds");
 
@@ -175,22 +178,44 @@ export function EmployeeExamForm({
       currentExamIds.filter((examId) => validExamIds.has(examId)),
       { shouldValidate: true }
     );
-  }, [employeeIdValue, examsForEmployee, getValues, setValue]);
+  }, [
+    employeeIdValue,
+    examsForEmployee,
+    isLoadingCompanyExams,
+    getValues,
+    setValue,
+  ]);
 
-  const examOptions = useMemo(
-    () =>
-      examsForEmployee.map((exam) => ({
-        value: exam.id,
-        label: exam.name,
-      })),
-    [examsForEmployee]
-  );
+  const examOptions = useMemo(() => {
+    const options = examsForEmployee.map((exam) => ({
+      value: exam.id,
+      label: exam.name,
+    }));
 
-  const examPlaceholder = !selectedEmployee
+    if (!defaultValues) {
+      return options;
+    }
+
+    const currentExamId = defaultValues.exam.id;
+    if (options.some((option) => option.value === currentExamId)) {
+      return options;
+    }
+
+    return [
+      { value: currentExamId, label: defaultValues.exam.name },
+      ...options,
+    ];
+  }, [examsForEmployee, defaultValues]);
+
+  const canSelectExams =
+    !!selectedEmployee ||
+    (isEditing && employeeIdValue === defaultValues?.employee.id);
+
+  const examPlaceholder = !canSelectExams
     ? "Selecione o funcionário primeiro"
     : isLoadingCompanyExams
       ? "Carregando exames..."
-      : examsForEmployee.length === 0
+      : examOptions.length === 0
         ? "Nenhum exame para esta empresa"
         : "Selecione o(s) exame(s)";
 
@@ -222,55 +247,20 @@ export function EmployeeExamForm({
           disabled={employees.length === 0 || isSubmitting}
         />
 
-        {isEditing ? (
-          <Controller
-            name="examIds"
-            control={control}
-            render={({ field, fieldState }) => (
-              <div className="flex w-full flex-col gap-2.5">
-                <Label htmlFor={`${formId}-exam`} className="text-sm">
-                  Exame (catálogo)
-                </Label>
-                <SearchableSelect
-                  id={`${formId}-exam`}
-                  value={field.value[0] || null}
-                  onValueChange={(next) =>
-                    field.onChange(next ? [String(next)] : [])
-                  }
-                  options={examOptions}
-                  placeholder={examPlaceholder}
-                  searchPlaceholder="Buscar exame..."
-                  disabled={
-                    !selectedEmployee ||
-                    isLoadingCompanyExams ||
-                    examsForEmployee.length === 0 ||
-                    isSubmitting
-                  }
-                  aria-invalid={!!fieldState.error}
-                />
-                {fieldState.error?.message && (
-                  <p className="text-sm text-destructive">
-                    {fieldState.error.message}
-                  </p>
-                )}
-              </div>
-            )}
-          />
-        ) : (
-          <MultiSelectLabel
-            control={control}
-            name="examIds"
-            label="Exames (catálogo)"
-            options={examOptions}
-            placeholder={examPlaceholder}
-            disabled={
-              !selectedEmployee ||
-              isLoadingCompanyExams ||
-              examsForEmployee.length === 0 ||
-              isSubmitting
-            }
-          />
-        )}
+        <MultiSelectLabel
+          control={control}
+          name="examIds"
+          label={isEditing ? "Exame (catálogo)" : "Exames (catálogo)"}
+          options={examOptions}
+          placeholder={examPlaceholder}
+          maxSelections={isEditing ? 1 : undefined}
+          disabled={
+            !canSelectExams ||
+            isLoadingCompanyExams ||
+            examOptions.length === 0 ||
+            isSubmitting
+          }
+        />
 
         <InputLabel
           control={control}

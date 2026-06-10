@@ -21,6 +21,7 @@ type MultiSelectProps = {
   options: MultiSelectOption[];
   placeholder?: string;
   searchPlaceholder?: string;
+  maxSelections?: number;
   disabled?: boolean;
   id?: string;
   "aria-invalid"?: boolean;
@@ -50,6 +51,7 @@ export function MultiSelect({
   options,
   placeholder = "Selecione...",
   searchPlaceholder = "Buscar...",
+  maxSelections,
   disabled = false,
   id,
   "aria-invalid": ariaInvalid,
@@ -87,6 +89,16 @@ export function MultiSelect({
       onChange(value.filter((id) => id !== optionValue));
       return;
     }
+
+    if (maxSelections === 1) {
+      onChange([optionValue]);
+      return;
+    }
+
+    if (maxSelections !== undefined && value.length >= maxSelections) {
+      return;
+    }
+
     onChange([...value, optionValue]);
   };
 

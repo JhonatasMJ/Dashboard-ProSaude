@@ -18,6 +18,7 @@ type MultiSelectLabelProps<T extends FieldValues> = {
   control: Control<T>;
   options: MultiSelectOption[];
   placeholder?: string;
+  maxSelections?: number;
   containerClassName?: string;
   disabled?: boolean;
 };
@@ -28,6 +29,7 @@ export function MultiSelectLabel<T extends FieldValues>({
   control,
   options,
   placeholder = "Selecione...",
+  maxSelections,
   containerClassName,
   disabled = false,
 }: MultiSelectLabelProps<T>) {
@@ -57,6 +59,7 @@ export function MultiSelectLabel<T extends FieldValues>({
             onChange={field.onChange}
             options={items}
             placeholder={placeholder}
+            maxSelections={maxSelections}
             disabled={disabled}
             aria-invalid={!!fieldState.error}
           />
