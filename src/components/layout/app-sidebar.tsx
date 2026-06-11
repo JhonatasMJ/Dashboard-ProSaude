@@ -30,7 +30,7 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[min(100vw-3rem,16rem)] flex-col border-r border-border bg-white shadow-lg transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-60 lg:shrink-0 lg:translate-x-0 lg:shadow-none",
+          "fixed inset-y-0 left-0 z-50 flex h-svh w-[min(100vw-3rem,16rem)] flex-col border-r border-border bg-white shadow-lg transition-transform duration-200 ease-out lg:static lg:z-auto lg:w-60 lg:shrink-0 lg:translate-x-0 lg:shadow-none",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >

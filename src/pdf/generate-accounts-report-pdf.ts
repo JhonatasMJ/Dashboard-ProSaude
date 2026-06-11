@@ -4,14 +4,14 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { PDF_BRAND, PDF_LAYOUT } from "@/pdf/brand-theme";
 import { loadLogoForPdf } from "@/pdf/load-logo-for-pdf";
-import type { GenerateContasReportPdfInput } from "@/pdf/contas-report.types";
+import type { GenerateAccountsReportPdfInput } from "@/pdf/accounts-report.types";
 import { formatDateBr } from "@/shared/helpers/date.helper";
 import { formatCurrency } from "@/shared/helpers/format-currency.helper";
 import {
-  CONTA_STATUS_LABELS,
-  type ContaStatus,
-} from "@/shared/types/conta-status.types";
-import type { IConta } from "@/shared/interfaces/https/conta";
+  ACCOUNT_STATUS_LABELS,
+  type AccountStatus,
+} from "@/shared/types/account-status.types";
+import type { IAccount } from "@/shared/interfaces/https/account";
 
 const REPORT_TITLE = "Relatório de Contas";
 const BRAND_NAME = "ProSaúde";
@@ -52,13 +52,13 @@ function getColumnStyles(tableWidth: number) {
   );
 }
 
-function mapContaToRow(conta: IConta): string[] {
+function mapAccountToRow(account: IAccount): string[] {
   return [
-    conta.nome,
-    formatCurrency(conta.valor),
-    CONTA_STATUS_LABELS[conta.status as ContaStatus] ?? conta.status,
-    formatDateBr(conta.dataVencimento),
-    conta.dataPagamento ? formatDateBr(conta.dataPagamento) : "—",
+    account.name,
+    formatCurrency(account.amount),
+    ACCOUNT_STATUS_LABELS[account.status as AccountStatus] ?? account.status,
+    formatDateBr(account.dueDate),
+    account.paidAt ? formatDateBr(account.paidAt) : "—",
   ];
 }
 
@@ -279,21 +279,21 @@ function drawPageFooter(doc: jsPDF, pageNumber: number, pageCount: number) {
   );
 }
 
-export async function generateContasReportPdf(
-  contas: IConta[],
-  options: GenerateContasReportPdfInput
+export async function generateAccountsReportPdf(
+  accounts: IAccount[],
+  options: GenerateAccountsReportPdfInput
 ): Promise<void> {
   const generatedAt = options.generatedAt ?? new Date();
   const logoDataUrl = await loadLogoForPdf();
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const tableWidth = getContentWidth(doc);
-  const totalValue = contas.reduce((sum, conta) => sum + conta.valor, 0);
+  const totalValue = accounts.reduce((sum, account) => sum + account.amount, 0);
 
   drawReportHeader(doc, logoDataUrl);
   const tableStartY = drawInfoSection(
     doc,
     generatedAt,
-    contas.length,
+    accounts.length,
     totalValue,
     options.filterSummary
   );
@@ -302,7 +302,7 @@ export async function generateContasReportPdf(
     startY: tableStartY,
     tableWidth,
     head: [TABLE_HEAD as unknown as string[]],
-    body: contas.map(mapContaToRow),
+    body: accounts.map(mapAccountToRow),
     margin: {
       top: 18,
       left: PDF_LAYOUT.marginX,

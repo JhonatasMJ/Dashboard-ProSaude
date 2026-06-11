@@ -6,34 +6,34 @@ import { DatePickerLabel } from "@/components/date-picker-label";
 import { InputLabel } from "@/components/input-label";
 import { SelectLabel } from "@/components/select-label";
 import { Button } from "@/components/ui/button";
-import { contaSchema } from "@/schemas/conta.schema";
-import { contaToFormValues } from "@/shared/helpers/conta-form.helper";
+import { accountSchema } from "@/schemas/account.schema";
+import { accountToFormValues } from "@/shared/helpers/account-form.helper";
 import { dateToDateOnly } from "@/shared/helpers/date.helper";
-import { MAX_CONTA_VALUE } from "@/shared/helpers/currency-input.helper";
-import type { IConta } from "@/shared/interfaces/https/conta";
+import { MAX_ACCOUNT_VALUE } from "@/shared/helpers/currency-input.helper";
+import type { IAccount } from "@/shared/interfaces/https/account";
 import {
-  CONTA_STATUS_LABELS,
-  type ContaStatus,
-} from "@/shared/types/conta-status.types";
-import type { ContaFormData } from "@/types/conta-form.types";
+  ACCOUNT_STATUS_LABELS,
+  type AccountStatus,
+} from "@/shared/types/account-status.types";
+import type { AccountFormData } from "@/types/account-form.types";
 import { cn } from "@/lib/utils";
 
-interface ContaFormProps {
-  defaultValues?: IConta;
+interface AccountFormProps {
+  defaultValues?: IAccount;
   isSubmitting?: boolean;
   submitLabel: string;
   formId?: string;
   variant?: "default" | "sheet";
-  onSubmit: (data: ContaFormData) => Promise<void>;
+  onSubmit: (data: AccountFormData) => Promise<void>;
   onCancel?: () => void;
 }
 
-const emptyValues: ContaFormData = {
-  nome: "",
-  valor: "",
-  dataVencimento: "",
-  status: "pendente",
-  dataPagamento: "",
+const emptyValues: AccountFormData = {
+  name: "",
+  amount: "",
+  dueDate: "",
+  status: "PENDING",
+  paidAt: "",
 };
 
 function FormSection({
@@ -58,20 +58,20 @@ function FormSection({
   );
 }
 
-export function ContaForm({
+export function AccountForm({
   defaultValues,
   isSubmitting = false,
   submitLabel,
-  formId = "conta-form",
+  formId = "account-form",
   variant = "default",
   onSubmit,
   onCancel,
-}: ContaFormProps) {
+}: AccountFormProps) {
   const isSheet = variant === "sheet";
 
   const statusOptions = useMemo(
     () =>
-      (Object.entries(CONTA_STATUS_LABELS) as [ContaStatus, string][]).map(
+      (Object.entries(ACCOUNT_STATUS_LABELS) as [AccountStatus, string][]).map(
         ([value, label]) => ({ value, label })
       ),
     []
@@ -82,28 +82,28 @@ export function ContaForm({
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm<ContaFormData>({
-    resolver: yupResolver(contaSchema) as Resolver<ContaFormData>,
-    defaultValues: defaultValues ? contaToFormValues(defaultValues) : emptyValues,
+  } = useForm<AccountFormData>({
+    resolver: yupResolver(accountSchema) as Resolver<AccountFormData>,
+    defaultValues: defaultValues ? accountToFormValues(defaultValues) : emptyValues,
   });
 
   const status = useWatch({ control, name: "status" });
-  const dataVencimento = useWatch({ control, name: "dataVencimento" });
-  const dataPagamento = useWatch({ control, name: "dataPagamento" });
-  const isPaid = status === "pago";
+  const dueDate = useWatch({ control, name: "dueDate" });
+  const paidAt = useWatch({ control, name: "paidAt" });
+  const isPaid = status === "PAID";
 
   useEffect(() => {
     if (!isPaid) {
-      setValue("dataPagamento", "", { shouldValidate: true });
+      setValue("paidAt", "", { shouldValidate: true });
       return;
     }
 
-    if (!dataPagamento?.trim()) {
-      setValue("dataPagamento", dateToDateOnly(new Date()), {
+    if (!paidAt?.trim()) {
+      setValue("paidAt", dateToDateOnly(new Date()), {
         shouldValidate: true,
       });
     }
-  }, [isPaid, dataPagamento, setValue]);
+  }, [isPaid, paidAt, setValue]);
 
   return (
     <form
@@ -118,34 +118,34 @@ export function ContaForm({
       >
         <InputLabel
           control={control}
-          name="nome"
+          name="name"
           label="Nome"
           placeholder="Ex.: Aluguel, Energia..."
         />
 
         <CurrencyInputLabel
           control={control}
-          name="valor"
+          name="amount"
           label="Valor"
           placeholder="0,00"
-          maxValue={MAX_CONTA_VALUE}
+          maxValue={MAX_ACCOUNT_VALUE}
           disabled={isSubmitting}
         />
 
         <div className="flex flex-col gap-2.5">
           <DatePickerLabel
-            id="conta-data-vencimento"
+            id="account-due-date"
             label="Data de vencimento"
-            value={dataVencimento ?? ""}
+            value={dueDate ?? ""}
             onChange={(value) =>
-              setValue("dataVencimento", value, { shouldValidate: true })
+              setValue("dueDate", value, { shouldValidate: true })
             }
             placeholder="Selecione a data de vencimento"
             disabled={isSubmitting}
           />
-          {errors.dataVencimento?.message && (
+          {errors.dueDate?.message && (
             <p className="text-sm text-destructive">
-              {errors.dataVencimento.message}
+              {errors.dueDate.message}
             </p>
           )}
         </div>
@@ -163,18 +163,18 @@ export function ContaForm({
         {isPaid && (
           <div className="flex flex-col gap-2.5">
             <DatePickerLabel
-              id="conta-data-pagamento"
+              id="account-paid-at"
               label="Data de pagamento"
-              value={dataPagamento ?? ""}
+              value={paidAt ?? ""}
               onChange={(value) =>
-                setValue("dataPagamento", value, { shouldValidate: true })
+                setValue("paidAt", value, { shouldValidate: true })
               }
               placeholder="Selecione a data de pagamento"
               disabled={isSubmitting}
             />
-            {errors.dataPagamento?.message && (
+            {errors.paidAt?.message && (
               <p className="text-sm text-destructive">
-                {errors.dataPagamento.message}
+                {errors.paidAt.message}
               </p>
             )}
           </div>

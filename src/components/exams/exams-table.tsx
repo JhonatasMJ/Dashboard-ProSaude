@@ -1,15 +1,19 @@
 import { Search } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 import { ButtonAnimatedIcon } from "@/components/button-animated-icon";
 import { CompanyFilterSelect } from "@/components/exams/company-filter-select";
 import { ExamFormSheet } from "@/components/exams/exam-form-sheet";
+import {
+  DataTable,
+  DataTableRowActions,
+  DATA_TABLE_CELL_CLASS,
+  DATA_TABLE_HEAD_CLASS,
+  DATA_TABLE_HEADER_ROW_CLASS,
+  getDataTableRowClassName,
+} from "@/components/data-table";
 import { DeleteModal } from "@/components/delete-modal";
 import { Button } from "@/components/ui/button";
-import { DeleteIcon } from "@/components/ui/delete";
 import { PlusIcon } from "@/components/ui/plus";
-import { SquarePenIcon } from "@/components/ui/square-pen";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import {
@@ -21,9 +25,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
+import { useCrudSheetState } from "@/hooks/use-crud-sheet-state";
 import { useExams } from "@/contexts/exams.context";
 import { cn } from "@/lib/utils";
-import { TABLE_PAGE_SIZE } from "@/shared/constants/app.constants";
 import {
   FILTER_FIELD_LABEL_CLASS,
   FILTER_FIELD_WRAPPER_CLASS,
@@ -32,24 +36,6 @@ import {
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatCurrency } from "@/shared/helpers/format-currency.helper";
 import type { IExam } from "@/shared/interfaces/https/exam";
-
-function ExamsTableSkeleton() {
-  return (
-    <div className="divide-y divide-border">
-      {Array.from({ length: TABLE_PAGE_SIZE }).map((_, index) => (
-        <div
-          key={index}
-          className="flex animate-pulse items-center gap-4 px-5 py-4"
-        >
-          <div className="h-4 w-40 flex-1 rounded-md bg-muted" />
-          <div className="hidden h-4 w-32 rounded-md bg-muted md:block" />
-          <div className="hidden h-4 w-20 rounded-md bg-muted lg:block" />
-          <div className="h-8 w-16 rounded-md bg-muted" />
-        </div>
-      ))}
-    </div>
-  );
-}
 
 function ExamRow({
   exam,
@@ -62,75 +48,38 @@ function ExamRow({
   onEdit: (exam: IExam) => void;
   onDelete: (exam: IExam) => void;
 }) {
-  const editIcon = useButtonAnimatedIcon();
-  const deleteIcon = useButtonAnimatedIcon();
-  const isEven = rowIndex % 2 === 0;
-
   return (
-    <TableRow
-      className={cn(
-        "border-border/60 transition-colors",
-        isEven
-          ? "bg-background hover:bg-muted/40"
-          : "bg-muted/30 hover:bg-muted/50"
-      )}
-    >
-      <TableCell className="px-5 py-4">
+    <TableRow className={getDataTableRowClassName(rowIndex)}>
+      <TableCell className={DATA_TABLE_CELL_CLASS}>
         <p className="truncate font-medium text-foreground">{exam.name}</p>
       </TableCell>
-      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground md:table-cell">
+      <TableCell className="hidden text-sm text-muted-foreground md:table-cell px-5 py-4">
         {exam.company.name}
       </TableCell>
-      <TableCell className="hidden px-5 py-4 text-sm font-medium text-foreground lg:table-cell">
+      <TableCell className="hidden text-sm font-medium text-foreground lg:table-cell px-5 py-4">
         {formatCurrency(exam.price)}
       </TableCell>
-      <TableCell className="hidden px-5 py-4 text-sm text-muted-foreground xl:table-cell">
+      <TableCell className="hidden text-sm text-muted-foreground xl:table-cell px-5 py-4">
         {formatCurrency(exam.cost)}
       </TableCell>
       <TableCell
         className={cn(
-          "hidden px-5 py-4 text-sm font-medium 2xl:table-cell",
+          "hidden text-sm font-medium 2xl:table-cell px-5 py-4",
           exam.profit >= 0 ? "text-primary" : "text-destructive"
         )}
       >
         {formatCurrency(exam.profit)}
       </TableCell>
-      <TableCell className="hidden max-w-[200px] truncate px-5 py-4 text-sm text-muted-foreground 2xl:table-cell">
+      <TableCell className="hidden max-w-[200px] truncate text-sm text-muted-foreground 2xl:table-cell px-5 py-4">
         {exam.notes || "—"}
       </TableCell>
-      <TableCell className="px-5 py-4">
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="icon-lg"
-            className="rounded-md bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
-            aria-label={`Editar ${exam.name}`}
-            onClick={() => onEdit(exam)}
-            {...editIcon.rowHandlers}
-          >
-            <ButtonAnimatedIcon
-              icon={SquarePenIcon}
-              iconRef={editIcon.iconRef}
-              size={16}
-              className="text-primary"
-            />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-lg"
-            className="rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
-            aria-label={`Excluir ${exam.name}`}
-            onClick={() => onDelete(exam)}
-            {...deleteIcon.rowHandlers}
-          >
-            <ButtonAnimatedIcon
-              icon={DeleteIcon}
-              iconRef={deleteIcon.iconRef}
-              size={16}
-              className="text-destructive"
-            />
-          </Button>
-        </div>
+      <TableCell className={DATA_TABLE_CELL_CLASS}>
+        <DataTableRowActions
+          editLabel={`Editar ${exam.name}`}
+          deleteLabel={`Excluir ${exam.name}`}
+          onEdit={() => onEdit(exam)}
+          onDelete={() => onDelete(exam)}
+        />
       </TableCell>
     </TableRow>
   );
@@ -154,9 +103,15 @@ export function ExamsTable() {
     setPage,
   } = useExams();
 
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingExam, setEditingExam] = useState<IExam | null>(null);
-  const [deletingExam, setDeletingExam] = useState<IExam | null>(null);
+  const {
+    formOpen,
+    editingItem: editingExam,
+    deletingItem: deletingExam,
+    setDeletingItem: setDeletingExam,
+    openCreate,
+    openEdit,
+    handleFormOpenChange,
+  } = useCrudSheetState<IExam>();
   const plusIconHeader = useButtonAnimatedIcon();
   const plusIconEmpty = useButtonAnimatedIcon();
 
@@ -165,23 +120,6 @@ export function ExamsTable() {
     nameFilter.trim().length > 0 || companyIdFilter.length > 0;
   const isEmptyList = !isLoading && !error && exams.length === 0;
   const canCreate = companies.length > 0;
-
-  const openCreate = () => {
-    setEditingExam(null);
-    setFormOpen(true);
-  };
-
-  const openEdit = (exam: IExam) => {
-    setEditingExam(exam);
-    setFormOpen(true);
-  };
-
-  const handleFormOpenChange = (open: boolean) => {
-    setFormOpen(open);
-    if (!open) {
-      setEditingExam(null);
-    }
-  };
 
   const handleDelete = async () => {
     if (!deletingExam) return;
@@ -198,201 +136,143 @@ export function ExamsTable() {
   };
 
   return (
-    <>
-      <Card className="gap-0 overflow-hidden rounded-sm border border-border bg-white py-0 shadow-sm ring-0">
-        <div className="flex flex-col gap-4 border-b border-border bg-muted/20 px-5 py-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="font-semibold text-foreground">Exames</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Exames por empresa, com preços e custos próprios.
-                {!isLoading && !error && meta && (
-                  <>
-                    {" "}
-                    <span className="font-medium text-foreground/70">
-                      · {totalCount}{" "}
-                      {totalCount === 1 ? "exame" : "exames"}
-                    </span>
-                  </>
-                )}
-              </p>
-            </div>
-            <Button
-              className="shrink-0 rounded-md py-4.5"
-              size="lg"
-              onClick={openCreate}
-              disabled={isLoading || !canCreate}
-              {...plusIconHeader.rowHandlers}
-            >
-              <ButtonAnimatedIcon
-                icon={PlusIcon}
-                iconRef={plusIconHeader.iconRef}
-                size={16}
+    <DataTable
+      title="Exames"
+      description={
+        <>
+          Exames por empresa, com preços e custos próprios.
+          {!isLoading && !error && meta ? (
+            <>
+              {" "}
+              <span className="font-medium text-foreground/70">
+                · {totalCount} {totalCount === 1 ? "exame" : "exames"}
+              </span>
+            </>
+          ) : null}
+        </>
+      }
+      headerActions={
+        <Button
+          className="shrink-0 rounded-md py-4.5"
+          size="lg"
+          onClick={openCreate}
+          disabled={isLoading || !canCreate}
+          {...plusIconHeader.rowHandlers}
+        >
+          <ButtonAnimatedIcon icon={PlusIcon} iconRef={plusIconHeader.iconRef} size={16} />
+          Novo exame
+        </Button>
+      }
+      filters={
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+          <CompanyFilterSelect
+            className="lg:w-64 lg:shrink-0"
+            value={companyIdFilter}
+            onChange={setCompanyIdFilter}
+            companies={companies}
+            disabled={isLoadingFilters}
+          />
+          <div className={cn(FILTER_FIELD_WRAPPER_CLASS, "min-w-0 flex-1")}>
+            <label htmlFor="exam-name-filter" className={FILTER_FIELD_LABEL_CLASS}>
+              Buscar exame
+            </label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="exam-name-filter"
+                type="search"
+                placeholder="Nome do exame..."
+                value={nameFilter}
+                onChange={(event) => setNameFilter(event.target.value)}
+                className={FILTER_INPUT_CLASS}
               />
-              Novo exame
-            </Button>
-          </div>
-
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-            <CompanyFilterSelect
-              className="lg:w-64 lg:shrink-0"
-              value={companyIdFilter}
-              onChange={setCompanyIdFilter}
-              companies={companies}
-              disabled={isLoadingFilters}
-            />
-            <div className={cn(FILTER_FIELD_WRAPPER_CLASS, "min-w-0 flex-1")}>
-              <label
-                htmlFor="exam-name-filter"
-                className={FILTER_FIELD_LABEL_CLASS}
-              >
-                Buscar exame
-              </label>
-              <div className="relative">
-                <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="exam-name-filter"
-                  type="search"
-                  placeholder="Nome do exame..."
-                  value={nameFilter}
-                  onChange={(e) => setNameFilter(e.target.value)}
-                  className={FILTER_INPUT_CLASS}
-                />
-              </div>
             </div>
           </div>
         </div>
-
-        {isLoading && <ExamsTableSkeleton />}
-
-        {!isLoading && error && (
-          <div className="flex flex-col items-center gap-3 px-5 py-12 text-center">
-            <p className="text-sm text-destructive">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-md"
-              onClick={() => refetch()}
-            >
-              Tentar novamente
-            </Button>
-          </div>
-        )}
-
-        {isEmptyList && !hasActiveFilters && (
-          <div className="flex flex-col items-center gap-3 px-5 py-16 text-center">
-            <div className="space-y-1">
-              <p className="font-medium text-foreground">
-                Nenhum exame cadastrado
-              </p>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                {companies.length === 0
-                  ? "Cadastre uma empresa antes de incluir exames."
-                  : "Comece adicionando o primeiro exame."}
-              </p>
-            </div>
-            {canCreate && (
-              <Button
-                className="mt-1 rounded-md py-4.5"
-                onClick={openCreate}
-                {...plusIconEmpty.rowHandlers}
-              >
-                <ButtonAnimatedIcon
-                  icon={PlusIcon}
-                  iconRef={plusIconEmpty.iconRef}
-                  size={16}
-                />
-                Novo exame
-              </Button>
-            )}
-          </div>
-        )}
-
-        {isEmptyList && hasActiveFilters && (
-          <div className="flex flex-col items-center gap-2 px-5 py-16 text-center">
-            <p className="font-medium text-foreground">
-              Nenhum exame encontrado
-            </p>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Ajuste o filtro de busca e tente novamente.
-            </p>
-          </div>
-        )}
-
-        {!isLoading && !error && exams.length > 0 && (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/80 bg-muted/40 hover:bg-muted/40">
-                  <TableHead className="h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    Exame
-                  </TableHead>
-                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase md:table-cell">
-                    Empresa
-                  </TableHead>
-                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase lg:table-cell">
-                    Preço
-                  </TableHead>
-                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase xl:table-cell">
-                    Custo
-                  </TableHead>
-                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase 2xl:table-cell">
-                    Lucro
-                  </TableHead>
-                  <TableHead className="hidden h-11 px-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase 2xl:table-cell">
-                    Observações
-                  </TableHead>
-                  <TableHead className="h-11 px-5 text-right text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    Ações
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {exams.map((exam, index) => (
-                  <ExamRow
-                    key={exam.id}
-                    rowIndex={index}
-                    exam={exam}
-                    onEdit={openEdit}
-                    onDelete={setDeletingExam}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-
-            {meta && (
-              <Pagination
-                meta={meta}
-                disabled={isLoading || isSubmitting}
-                onPageChange={setPage}
+      }
+      isLoading={isLoading}
+      error={error}
+      onRetry={refetch}
+      isEmpty={isEmptyList}
+      hasActiveFilters={hasActiveFilters}
+      emptyState={{
+        title: "Nenhum exame cadastrado",
+        description:
+          companies.length === 0
+            ? "Cadastre uma empresa antes de incluir exames."
+            : "Comece adicionando o primeiro exame.",
+        action: canCreate ? (
+          <Button className="mt-1 rounded-md py-4.5" onClick={openCreate} {...plusIconEmpty.rowHandlers}>
+            <ButtonAnimatedIcon icon={PlusIcon} iconRef={plusIconEmpty.iconRef} size={16} />
+            Novo exame
+          </Button>
+        ) : undefined,
+      }}
+      filteredEmptyState={{
+        title: "Nenhum exame encontrado",
+        description: "Ajuste o filtro de busca e tente novamente.",
+      }}
+      skeletonColumns={4}
+      overlays={
+        <>
+          <ExamFormSheet
+            open={formOpen}
+            onOpenChange={handleFormOpenChange}
+            exam={editingExam}
+          />
+          <DeleteModal
+            open={!!deletingExam}
+            onOpenChange={(open) => {
+              if (!open) setDeletingExam(null);
+            }}
+            title="Excluir exame"
+            description={
+              <>
+                Tem certeza que deseja excluir{" "}
+                <strong>{deletingExam?.name}</strong>? Esta ação não pode ser
+                desfeita.
+              </>
+            }
+            isLoading={isSubmitting}
+            onConfirm={handleDelete}
+          />
+        </>
+      }
+    >
+      <>
+        <Table>
+          <TableHeader>
+            <TableRow className={DATA_TABLE_HEADER_ROW_CLASS}>
+              <TableHead className={DATA_TABLE_HEAD_CLASS}>Exame</TableHead>
+              <TableHead className={`hidden md:table-cell ${DATA_TABLE_HEAD_CLASS}`}>Empresa</TableHead>
+              <TableHead className={`hidden lg:table-cell ${DATA_TABLE_HEAD_CLASS}`}>Preço</TableHead>
+              <TableHead className={`hidden xl:table-cell ${DATA_TABLE_HEAD_CLASS}`}>Custo</TableHead>
+              <TableHead className={`hidden 2xl:table-cell ${DATA_TABLE_HEAD_CLASS}`}>Lucro</TableHead>
+              <TableHead className={`hidden 2xl:table-cell ${DATA_TABLE_HEAD_CLASS}`}>Observações</TableHead>
+              <TableHead className={`text-right ${DATA_TABLE_HEAD_CLASS}`}>Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {exams.map((exam, index) => (
+              <ExamRow
+                key={exam.id}
+                rowIndex={index}
+                exam={exam}
+                onEdit={openEdit}
+                onDelete={setDeletingExam}
               />
-            )}
-          </>
-        )}
-      </Card>
+            ))}
+          </TableBody>
+        </Table>
 
-      <ExamFormSheet
-        open={formOpen}
-        onOpenChange={handleFormOpenChange}
-        exam={editingExam}
-      />
-
-      <DeleteModal
-        open={!!deletingExam}
-        onOpenChange={(open) => {
-          if (!open) setDeletingExam(null);
-        }}
-        title="Excluir exame"
-        description={
-          <>
-            Tem certeza que deseja excluir{" "}
-            <strong>{deletingExam?.name}</strong>? Esta ação não pode ser
-            desfeita.
-          </>
-        }
-        isLoading={isSubmitting}
-        onConfirm={handleDelete}
-      />
-    </>
+        {meta ? (
+          <Pagination
+            meta={meta}
+            disabled={isLoading || isSubmitting}
+            onPageChange={setPage}
+          />
+        ) : null}
+      </>
+    </DataTable>
   );
 }

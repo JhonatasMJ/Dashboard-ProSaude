@@ -57,10 +57,10 @@ export default function DashboardLayout() {
   }
 
   return (
-    <div className="flex min-h-svh w-full">
+    <div className="flex h-svh w-full overflow-hidden">
       <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <header className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-4 py-3 lg:hidden">
           <Button
             type="button"
@@ -78,7 +78,7 @@ export default function DashboardLayout() {
           />
         </header>
 
-        <main className="flex flex-1 flex-col overflow-auto bg-background">
+        <main className="flex min-h-0 flex-1 flex-col overflow-auto bg-background">
           <DashboardProvider>
             <Outlet />
           </DashboardProvider>

@@ -13,62 +13,68 @@ import {
   FILTER_SELECT_TRIGGER_CLASS,
 } from "@/shared/constants/filter-field.constants";
 import {
-  CONTA_STATUS_LABELS,
-  type ContaStatus,
-} from "@/shared/types/conta-status.types";
+  OCCUPATIONAL_RISK_CATEGORY_LABELS,
+  type OccupationalRiskCategory,
+} from "@/shared/types/occupational-risk-category.types";
 import { cn } from "@/lib/utils";
 
-export const ALL_CONTA_STATUS_FILTER_VALUE = "all";
+export const ALL_OCCUPATIONAL_RISK_CATEGORY_FILTER_VALUE = "all";
 
-interface ContaStatusFilterSelectProps {
-  value: ContaStatus | "";
-  onChange: (value: ContaStatus | "") => void;
+interface OccupationalRiskCategoryFilterSelectProps {
+  value: OccupationalRiskCategory | "";
+  onChange: (value: OccupationalRiskCategory | "") => void;
   disabled?: boolean;
   className?: string;
   id?: string;
 }
 
-export function ContaStatusFilterSelect({
+export function OccupationalRiskCategoryFilterSelect({
   value,
   onChange,
   disabled = false,
   className,
-  id = "conta-status-filter",
-}: ContaStatusFilterSelectProps) {
+  id = "occupational-risk-category-filter",
+}: OccupationalRiskCategoryFilterSelectProps) {
   const items = useMemo(
     () => [
-      { value: ALL_CONTA_STATUS_FILTER_VALUE, label: "Todos os status" },
+      {
+        value: ALL_OCCUPATIONAL_RISK_CATEGORY_FILTER_VALUE,
+        label: "Todas as categorias",
+      },
       ...(
-        Object.entries(CONTA_STATUS_LABELS) as [ContaStatus, string][]
-      ).map(([status, label]) => ({
-        value: status,
+        Object.entries(OCCUPATIONAL_RISK_CATEGORY_LABELS) as [
+          OccupationalRiskCategory,
+          string,
+        ][]
+      ).map(([category, label]) => ({
+        value: category,
         label,
       })),
     ],
     []
   );
 
-  const selectValue = value || ALL_CONTA_STATUS_FILTER_VALUE;
+  const selectValue = value || ALL_OCCUPATIONAL_RISK_CATEGORY_FILTER_VALUE;
 
   return (
     <div className={cn(FILTER_FIELD_WRAPPER_CLASS, className)}>
       <Label htmlFor={id} className={FILTER_FIELD_LABEL_CLASS}>
-        Status
+        Categoria
       </Label>
       <Select
         value={selectValue}
         onValueChange={(next) =>
           onChange(
-            next === ALL_CONTA_STATUS_FILTER_VALUE || !next
+            next === ALL_OCCUPATIONAL_RISK_CATEGORY_FILTER_VALUE || !next
               ? ""
-              : (next as ContaStatus)
+              : (next as OccupationalRiskCategory)
           )
         }
         items={items}
         disabled={disabled}
       >
         <SelectTrigger id={id} className={FILTER_SELECT_TRIGGER_CLASS}>
-          <SelectValue placeholder="Todos os status" className="truncate" />
+          <SelectValue placeholder="Todas as categorias" className="truncate" />
         </SelectTrigger>
         <SelectContent align="start">
           {items.map((item) => (

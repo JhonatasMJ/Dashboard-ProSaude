@@ -1,18 +1,20 @@
 import { createBrowserRouter } from "react-router-dom";
 import { CompaniesProvider } from "@/contexts/companies.context";
-import { ContasProvider } from "@/contexts/contas.context";
+import { AccountsProvider } from "@/contexts/accounts.context";
 import { EmployeeExamsProvider } from "@/contexts/employee-exams.context";
 import { EmployeesProvider } from "@/contexts/employees.context";
 import { ExamsProvider } from "@/contexts/exams.context";
 import { UsersProvider } from "@/contexts/users.context";
+import { OccupationalRisksProvider } from "@/contexts/occupational-risks.context";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import CompaniesPage from "@/pages/companies";
-import ContasPage from "@/pages/contas";
+import AccountsPage from "@/pages/accounts";
 import Dashboard from "@/pages/dashboard";
 import EmployeesPage from "@/pages/employees";
 import ExamsPage from "@/pages/exams";
 import UsersPage from "@/pages/users";
-import VinculosPage from "@/pages/vinculos";
+import EmployeeExamsPage from "@/pages/employee-exams";
+import OccupationalRisksPage from "@/pages/occupational-risks";
 import Login from "@/pages/login";
 import { AdminRoute } from "@/routes/admin-route";
 import { RootLayout } from "@/routes/root-layout";
@@ -36,7 +38,7 @@ export const router = createBrowserRouter([
             handle: { title: "Início" },
           },
           {
-            path: "empresas",
+            path: "companies",
             element: (
               <CompaniesProvider>
                 <CompaniesPage />
@@ -45,16 +47,16 @@ export const router = createBrowserRouter([
             handle: { title: "Empresas" },
           },
           {
-            path: "contas",
+            path: "accounts",
             element: (
-              <ContasProvider>
-                <ContasPage />
-              </ContasProvider>
+              <AccountsProvider>
+                <AccountsPage />
+              </AccountsProvider>
             ),
             handle: { title: "Contas" },
           },
           {
-            path: "exames",
+            path: "exams",
             element: (
               <ExamsProvider>
                 <ExamsPage />
@@ -63,7 +65,16 @@ export const router = createBrowserRouter([
             handle: { title: "Exames" },
           },
           {
-            path: "funcionarios",
+            path: "occupational-risks",
+            element: (
+              <OccupationalRisksProvider>
+                <OccupationalRisksPage />
+              </OccupationalRisksProvider>
+            ),
+            handle: { title: "Riscos Ocupacionais" },
+          },
+          {
+            path: "employees",
             element: (
               <EmployeesProvider>
                 <EmployeesPage />
@@ -72,16 +83,16 @@ export const router = createBrowserRouter([
             handle: { title: "Funcionários" },
           },
           {
-            path: "vinculos",
+            path: "employee-exams",
             element: (
               <EmployeeExamsProvider>
-                <VinculosPage />
+                <EmployeeExamsPage />
               </EmployeeExamsProvider>
             ),
             handle: { title: "Vínculos" },
           },
           {
-            path: "usuarios",
+            path: "users",
             element: (
               <AdminRoute>
                 <UsersProvider>

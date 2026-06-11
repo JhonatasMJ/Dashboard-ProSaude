@@ -7,6 +7,7 @@ import { HomeIcon } from "@/components/ui/home";
 import { LayoutGridIcon } from "@/components/ui/layout-grid";
 import { SettingsIcon } from "@/components/ui/settings";
 import { StethoscopeIcon } from "@/components/ui/stethoscope";
+import { TriangleAlertIcon } from "@/components/ui/triangle-alert";
 import { UsersIcon } from "@/components/ui/users";
 import { WalletIcon } from "@/components/ui/wallet";
 
@@ -33,32 +34,37 @@ export const dashboardNavItems: NavItem[] = [
   },
   {
     title: "Empresas",
-    href: "/dashboard/empresas",
+    href: "/dashboard/companies",
     icon: FileTextIcon,
   },
   {
     title: "Contas",
-    href: "/dashboard/contas",
+    href: "/dashboard/accounts",
     icon: WalletIcon,
   },
   {
     title: "Exames",
-    href: "/dashboard/exames",
+    href: "/dashboard/exams",
     icon: StethoscopeIcon,
   },
   {
+    title: "Riscos Ocupacionais",
+    href: "/dashboard/occupational-risks",
+    icon: TriangleAlertIcon,
+  },
+  {
     title: "Funcionários",
-    href: "/dashboard/funcionarios",
+    href: "/dashboard/employees",
     icon: UsersIcon,
   },
   {
     title: "Vínculos",
-    href: "/dashboard/vinculos",
+    href: "/dashboard/employee-exams",
     icon: LayoutGridIcon,
   },
   {
     title: "Usuários",
-    href: "/dashboard/usuarios",
+    href: "/dashboard/users",
     icon: SettingsIcon,
     adminOnly: true,
   },

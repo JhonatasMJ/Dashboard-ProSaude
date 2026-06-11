@@ -82,4 +82,4 @@ export function isValidPriceInput(
 }
 
 /** Valor máximo permitido para contas (R$). */
-export const MAX_CONTA_VALUE = 999_999.99;
+export const MAX_ACCOUNT_VALUE = 999_999.99;

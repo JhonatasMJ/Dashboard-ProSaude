@@ -27,29 +27,29 @@ function formatAxisCurrency(value: number) {
 }
 
 const COMPARISON_METRICS = [
-  { key: "receita" as const, label: "Receita" },
-  { key: "custoExames" as const, label: "Custo exames" },
-  { key: "custoContas" as const, label: "Custo contas" },
-  { key: "lucro" as const, label: "Lucro" },
+  { key: "revenue" as const, label: "Receita" },
+  { key: "examCost" as const, label: "Custo exames" },
+  { key: "contaCost" as const, label: "Custo contas" },
+  { key: "profit" as const, label: "Lucro" },
 ];
 
 function buildPeriodComparison(financial: IDashboardFinancial) {
   return COMPARISON_METRICS.map(({ key, label }) => ({
     metric: label,
-    todoPeriodo:
-      key === "receita"
+    allTime:
+      key === "revenue"
         ? financial.allTime.revenue
-        : key === "custoExames"
+        : key === "examCost"
           ? financial.allTime.examCost
-          : key === "custoContas"
+          : key === "contaCost"
             ? financial.allTime.contaCost
             : financial.allTime.profit,
-    esteMes:
-      key === "receita"
+    thisMonth:
+      key === "revenue"
         ? financial.thisMonth.revenue
-        : key === "custoExames"
+        : key === "examCost"
           ? financial.thisMonth.examCost
-          : key === "custoContas"
+          : key === "contaCost"
             ? financial.thisMonth.contaCost
             : financial.thisMonth.profit,
   }));
@@ -90,8 +90,8 @@ function buildComposition(financial: IDashboardFinancial) {
 }
 
 const PERIOD_LABELS: Record<string, string> = {
-  todoPeriodo: "Todo o período",
-  esteMes: "Este mês",
+  allTime: "Todo o período",
+  thisMonth: "Este mês",
 };
 
 function FinancialSkeleton() {
@@ -197,19 +197,19 @@ export function SummaryFinancialSection({
               <Legend
                 wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
                 formatter={(value) =>
-                  value === "todoPeriodo" ? "Todo o período" : "Este mês"
+                  value === "allTime" ? "Todo o período" : "Este mês"
                 }
               />
               <Bar
-                dataKey="todoPeriodo"
-                name="todoPeriodo"
+                dataKey="allTime"
+                name="allTime"
                 fill={DASHBOARD_CHART.allTime}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={48}
               />
               <Bar
-                dataKey="esteMes"
-                name="esteMes"
+                dataKey="thisMonth"
+                name="thisMonth"
                 fill={DASHBOARD_CHART.thisMonth}
                 radius={[4, 4, 0, 0]}
                 maxBarSize={48}
