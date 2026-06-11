@@ -50,6 +50,14 @@ function getColumnStyles(tableWidth: number) {
   );
 }
 
+function sortLinksByEmployeeName(links: IEmployeeExam[]): IEmployeeExam[] {
+  return [...links].sort((a, b) =>
+    a.employee.name.localeCompare(b.employee.name, "pt-BR", {
+      sensitivity: "base",
+    })
+  );
+}
+
 function mapLinkToRow(link: IEmployeeExam): string[] {
   return [
     formatDateBr(link.examDate),
@@ -283,17 +291,21 @@ export async function generateEmployeeExamsReportPdf(
   links: IEmployeeExam[],
   options: GenerateEmployeeExamsReportPdfInput
 ): Promise<void> {
+  const sortedLinks = sortLinksByEmployeeName(links);
   const generatedAt = options.generatedAt ?? new Date();
   const logoDataUrl = await loadLogoForPdf();
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const tableWidth = getContentWidth(doc);
-  const totalExamValue = links.reduce((sum, link) => sum + link.exam.price, 0);
+  const totalExamValue = sortedLinks.reduce(
+    (sum, link) => sum + link.exam.price,
+    0
+  );
 
   drawReportHeader(doc, logoDataUrl);
   const tableStartY = drawInfoSection(
     doc,
     generatedAt,
-    links.length,
+    sortedLinks.length,
     totalExamValue,
     options.filterSummary
   );
@@ -302,7 +314,7 @@ export async function generateEmployeeExamsReportPdf(
     startY: tableStartY,
     tableWidth,
     head: [TABLE_HEAD as unknown as string[]],
-    body: links.map(mapLinkToRow),
+    body: sortedLinks.map(mapLinkToRow),
     margin: {
       top: 18,
       left: PDF_LAYOUT.marginX,
