@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageLayout } from "@/components/PageLayout";
 import { toast } from "sonner";
 import { ButtonAnimatedIcon } from "@/components/ButtonAnimatedIcon";
 import {
@@ -9,6 +10,7 @@ import {
   DATA_TABLE_HEADER_ROW_CLASS,
   getDataTableRowClassName,
 } from "@/components/data-table";
+import { TableActionTooltip } from "@/components/data-table/TableActionTooltip";
 import { DeleteModal } from "@/components/DeleteModal";
 import { UserForm } from "@/components/Forms/UserForm";
 import { FormSheet } from "@/components/FormSheet";
@@ -30,7 +32,7 @@ import { useUsers } from "@/contexts/users.context";
 import type { UserRegisterFormData } from "@/schemas/user-register.schema";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatDateBr } from "@/shared/helpers/date.helper";
-import { formatUserRole } from "@/shared/helpers/user-role.helper";
+import { formatUserRole } from "@/shared/helpers/user.helper";
 import type { IUser } from "@/shared/interfaces/https/user";
 
 const USER_FORM_ID = "user-form";
@@ -65,21 +67,23 @@ function UserRow({
       <TableCell className={DATA_TABLE_CELL_CLASS}>
         <div className="flex items-center justify-end gap-2">
           {!isCurrentUser ? (
-            <Button
-              variant="ghost"
-              size="icon-lg"
-              className="rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
-              aria-label={`Excluir ${user.name}`}
-              onClick={() => onDelete(user)}
-              {...deleteIcon.rowHandlers}
-            >
-              <ButtonAnimatedIcon
-                icon={DeleteIcon}
-                iconRef={deleteIcon.iconRef}
-                size={16}
-                className="text-destructive"
-              />
-            </Button>
+            <TableActionTooltip label="Excluir">
+              <Button
+                variant="ghost"
+                size="icon-lg"
+                className="rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                aria-label={`Excluir ${user.name}`}
+                onClick={() => onDelete(user)}
+                {...deleteIcon.rowHandlers}
+              >
+                <ButtonAnimatedIcon
+                  icon={DeleteIcon}
+                  iconRef={deleteIcon.iconRef}
+                  size={16}
+                  className="text-destructive"
+                />
+              </Button>
+            </TableActionTooltip>
           ) : (
             <span
               className="text-xs text-muted-foreground"
@@ -180,17 +184,10 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-8 p-8">
-      <header className="space-y-1">
-        <h1 className="flex items-center gap-1 text-3xl font-bold tracking-tight text-foreground">
-          Usuários
-          <span className="text-primary">.</span>
-        </h1>
-        <p className="max-w-xl text-muted-foreground">
-          Cadastre pessoas autorizadas a acessar o dashboard com e-mail e senha.
-        </p>
-      </header>
-
+    <PageLayout
+      title="Usuários"
+      description="Cadastre pessoas autorizadas a acessar o dashboard com e-mail e senha."
+    >
       <DataTable
         title="Usuários"
         description={
@@ -330,6 +327,6 @@ export default function UsersPage() {
           ) : null}
         </>
       </DataTable>
-    </div>
+    </PageLayout>
   );
 }

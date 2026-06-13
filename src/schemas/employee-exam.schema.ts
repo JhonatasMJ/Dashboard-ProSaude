@@ -9,7 +9,7 @@ import {
   dateOnlyToPaidAtIso,
   isoToDateOnly,
   normalizeToDateOnly,
-} from "@/shared/helpers/payment-date.helper";
+} from "@/shared/helpers/date.helper";
 import type {
   IEmployeeExam,
   IEmployeeExamCreatePayload,

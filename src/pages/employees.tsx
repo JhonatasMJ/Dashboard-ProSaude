@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { PageLayout } from "@/components/PageLayout";
 import { toast } from "sonner";
 import { ButtonAnimatedIcon } from "@/components/ButtonAnimatedIcon";
 import { CompanyFilterSelect } from "@/components/CompanyFilterSelect";
@@ -36,7 +37,7 @@ import {
   FILTER_INPUT_CLASS,
 } from "@/shared/constants/filter-field.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
-import { formatCpf } from "@/shared/helpers/cpf.helper";
+import { formatCpf } from "@/shared/helpers/input-masks.helper";
 import { formatAgeFromBirthDate, formatDateBr } from "@/shared/helpers/date.helper";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 
@@ -214,18 +215,10 @@ export default function EmployeesPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-8 p-8">
-      <header className="space-y-1">
-        <h1 className="flex items-center gap-1 text-3xl font-bold tracking-tight text-foreground">
-          Funcionários
-          <span className="text-primary">.</span>
-        </h1>
-        <p className="max-w-xl text-muted-foreground">
-          Cadastre funcionários por empresa. Os exames realizados são
-          registrados em Vínculos.
-        </p>
-      </header>
-
+    <PageLayout
+      title="Funcionários"
+      description="Cadastre funcionários por empresa. Os exames realizados são registrados em Vínculos."
+    >
       <DataTable
         title="Funcionários"
         description={
@@ -409,6 +402,6 @@ export default function EmployeesPage() {
           ) : null}
         </>
       </DataTable>
-    </div>
+    </PageLayout>
   );
 }

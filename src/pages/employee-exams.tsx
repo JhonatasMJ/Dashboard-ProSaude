@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { PageLayout } from "@/components/PageLayout";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ButtonAnimatedIcon } from "@/components/ButtonAnimatedIcon";
@@ -58,7 +59,7 @@ import {
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatDateBr } from "@/shared/helpers/date.helper";
 import { formatCurrency } from "@/shared/helpers/format-currency.helper";
-import { truncateText } from "@/shared/helpers/truncate-text.helper";
+import { truncateText } from "@/shared/helpers/search-text.helper";
 import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
 import type { PaymentStatus } from "@/shared/types/payment-status.types";
 
@@ -459,17 +460,10 @@ export default function EmployeeExamsPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-8 p-8">
-      <header className="space-y-1">
-        <h1 className="flex items-center gap-1 text-3xl font-bold tracking-tight text-foreground">
-          Vínculos
-          <span className="text-primary">.</span>
-        </h1>
-        <p className="max-w-xl text-muted-foreground">
-          Registre e consulte os exames realizados por cada funcionário.
-        </p>
-      </header>
-
+    <PageLayout
+      title="Vínculos"
+      description="Registre e consulte os exames realizados por cada funcionário."
+    >
       <DataTable
         title="Vínculos"
         description={
@@ -752,6 +746,6 @@ export default function EmployeeExamsPage() {
           ) : null}
         </>
       </DataTable>
-    </div>
+    </PageLayout>
   );
 }

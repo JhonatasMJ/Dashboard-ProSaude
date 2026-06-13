@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/DropdownMenu";
 import { useAuth } from "@/contexts/auth.context";
-import { getUserInitials } from "@/shared/helpers/user-initials.helper";
+import { getUserInitials } from "@/shared/helpers/user.helper";
 import { cn } from "@/lib/utils";
 
 export function SidebarUserMenu() {

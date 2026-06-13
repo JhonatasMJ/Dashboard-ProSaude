@@ -1,7 +1,7 @@
 import type { ComponentType, HTMLAttributes, RefAttributes } from "react";
 import type { AnimatedIconHandle } from "@/components/layout/SidebarAnimatedIcon";
 import type { UserRole } from "@/shared/interfaces/https/authenticate-response";
-import { canManageUsers } from "@/shared/helpers/user-permissions.helper";
+import { canManageUsers } from "@/shared/helpers/user.helper";
 import { ClipboardCheckIcon } from "@/components/ui/ClipboardCheck";
 import { FileTextIcon } from "@/components/ui/FileText";
 import { HomeIcon } from "@/components/ui/Home";
@@ -22,64 +22,99 @@ export interface NavItem {
   href: string;
   icon: AnimatedIcon;
   end?: boolean;
-  /** Visível apenas para administradores */
   adminOnly?: boolean;
 }
 
-export const dashboardNavItems: NavItem[] = [
+export interface NavSection {
+  label?: string;
+  items: NavItem[];
+}
+
+export const dashboardNavSections: NavSection[] = [
   {
-    title: "Início",
-    href: "/dashboard",
-    icon: HomeIcon,
-    end: true,
+    items: [
+      {
+        title: "Início",
+        href: "/dashboard",
+        icon: HomeIcon,
+        end: true,
+      },
+    ],
   },
   {
-    title: "Empresas",
-    href: "/dashboard/companies",
-    icon: FileTextIcon,
+    label: "Cadastros",
+    items: [
+      {
+        title: "Empresas",
+        href: "/dashboard/companies",
+        icon: FileTextIcon,
+      },
+      {
+        title: "Funcionários",
+        href: "/dashboard/employees",
+        icon: UsersIcon,
+      },
+      {
+        title: "Exames",
+        href: "/dashboard/exams",
+        icon: StethoscopeIcon,
+      },
+      {
+        title: "Riscos Ocupacionais",
+        href: "/dashboard/occupational-risks",
+        icon: TriangleAlertIcon,
+      },
+    ],
   },
   {
-    title: "Contas",
-    href: "/dashboard/accounts",
-    icon: WalletIcon,
+    label: "Operacional",
+    items: [
+      {
+        title: "Contas",
+        href: "/dashboard/accounts",
+        icon: WalletIcon,
+      },
+      {
+        title: "Vínculos",
+        href: "/dashboard/employee-exams",
+        icon: LayoutGridIcon,
+      },
+      {
+        title: "Emissão de ASO",
+        href: "/dashboard/asos",
+        icon: ClipboardCheckIcon,
+      },
+    ],
   },
   {
-    title: "Exames",
-    href: "/dashboard/exams",
-    icon: StethoscopeIcon,
-  },
-  {
-    title: "Riscos Ocupacionais",
-    href: "/dashboard/occupational-risks",
-    icon: TriangleAlertIcon,
-  },
-  {
-    title: "Funcionários",
-    href: "/dashboard/employees",
-    icon: UsersIcon,
-  },
-  {
-    title: "Vínculos",
-    href: "/dashboard/employee-exams",
-    icon: LayoutGridIcon,
-  },
-  {
-    title: "Emissão de ASO",
-    href: "/dashboard/asos",
-    icon: ClipboardCheckIcon,
-  },
-  {
-    title: "Usuários",
-    href: "/dashboard/users",
-    icon: SettingsIcon,
-    adminOnly: true,
+    label: "Administração",
+    items: [
+      {
+        title: "Usuários",
+        href: "/dashboard/users",
+        icon: SettingsIcon,
+        adminOnly: true,
+      },
+    ],
   },
 ];
 
+export function getDashboardNavSections(
+  role: UserRole | null | undefined
+): NavSection[] {
+  return dashboardNavSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) => !item.adminOnly || canManageUsers(role)
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
+}
+
+/** @deprecated Use getDashboardNavSections */
 export function getDashboardNavItems(
   role: UserRole | null | undefined
 ): NavItem[] {
-  return dashboardNavItems.filter(
-    (item) => !item.adminOnly || canManageUsers(role)
-  );
+  return getDashboardNavSections(role).flatMap((section) => section.items);
 }

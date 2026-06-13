@@ -22,7 +22,7 @@ export function SidebarNavItem({ item, onNavigate }: SidebarNavItemProps) {
       {...rowHandlers}
       className={({ isActive }) =>
         cn(
-                "group/nav flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-sm font-medium transition-colors",
+          "group/nav flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-sm font-medium transition-colors",
           isActive
             ? "bg-primary/10 text-primary"
             : "text-foreground hover:bg-primary/5"
@@ -34,7 +34,7 @@ export function SidebarNavItem({ item, onNavigate }: SidebarNavItemProps) {
           <SidebarIconBox active={isActive}>
             <item.icon ref={iconRef} size={NAV_ICON_SIZE} />
           </SidebarIconBox>
-          {item.title}
+          <span className="truncate">{item.title}</span>
         </>
       )}
     </NavLink>

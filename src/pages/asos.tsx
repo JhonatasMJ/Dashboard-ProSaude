@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { PageLayout } from "@/components/PageLayout";
 import { toast } from "sonner";
+import fichaPdf from "@/assets/ficha.pdf";
 import { AsoForm } from "@/components/Forms/AsoForm";
 import { ButtonAnimatedIcon } from "@/components/ButtonAnimatedIcon";
 import { DatePickerLabel } from "@/components/DatePickerLabel";
@@ -48,7 +50,7 @@ import {
 } from "@/shared/constants/filter-field.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { formatDateBr } from "@/shared/helpers/date.helper";
-import { truncateText } from "@/shared/helpers/truncate-text.helper";
+import { truncateText } from "@/shared/helpers/search-text.helper";
 import type { IAso } from "@/shared/interfaces/https/aso";
 import {
   ASO_TYPE_LABELS,
@@ -297,19 +299,19 @@ export default function AsosPage() {
     }
   };
 
-  return (
-    <div className="flex flex-1 flex-col gap-8 p-8">
-      <header className="space-y-1">
-        <h1 className="flex items-center gap-1 text-3xl font-bold tracking-tight text-foreground">
-          Emissão de ASO
-          <span className="text-primary">.</span>
-        </h1>
-        <p className="max-w-xl text-muted-foreground">
-          Emita, edite e exclua atestados de saúde ocupacional com exames e
-          riscos associados.
-        </p>
-      </header>
+  const handleDownloadFicha = () => {
+    const link = document.createElement("a");
+    link.href = fichaPdf;
+    link.download = "ficha.pdf";
+    link.rel = "noopener";
+    link.click();
+  };
 
+  return (
+    <PageLayout
+      title="Emissão de ASO"
+      description="Emita, edite e exclua atestados de saúde ocupacional com exames e riscos associados."
+    >
       <DataTable
         title="Emissão de ASO"
         description={
@@ -524,16 +526,19 @@ export default function AsosPage() {
                       {aso.occupationalRisks.length === 1 ? "risco" : "riscos"}
                     </p>
                   </TableCell>
-                  <TableCell className={cn(DATA_TABLE_CELL_CLASS, "w-[88px]")}>
+                  <TableCell className={cn(DATA_TABLE_CELL_CLASS, "w-[132px]")}>
                     <DataTableRowActions
                       editLabel={`Editar ASO de ${aso.employee.name}`}
                       deleteLabel={`Excluir ASO de ${aso.employee.name}`}
                       downloadLabel={`Baixar ASO de ${aso.employee.name}`}
+                      fichaDownloadLabel="Baixar ficha"
                       onEdit={() => handleOpenEdit(aso)}
                       onDelete={() => setDeletingAso(aso)}
                       onDownload={() => handleDownload(aso)}
+                      onDownloadFicha={handleDownloadFicha}
                       isDownloading={downloadingAsoId === aso.id}
                       showDownload
+                      showDownloadFicha
                     />
                   </TableCell>
                 </TableRow>
@@ -550,6 +555,6 @@ export default function AsosPage() {
           ) : null}
         </>
       </DataTable>
-    </div>
+    </PageLayout>
   );
 }

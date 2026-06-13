@@ -3,7 +3,7 @@ import logo from "@/assets/logo.svg";
 import { SidebarNavItem } from "@/components/layout/SidebarNavItem";
 import { SidebarUserMenu } from "@/components/layout/SidebarUserMenu";
 import { Button } from "@/components/ui/Button";
-import { getDashboardNavItems } from "@/config/navigation";
+import { getDashboardNavSections } from "@/config/navigation";
 import { useAuth } from "@/contexts/auth.context";
 import { APP_VERSION } from "@/shared/constants/app-version";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ open, onClose }: AppSidebarProps) {
   const { user } = useAuth();
-  const navItems = getDashboardNavItems(user?.role);
+  const navSections = getDashboardNavSections(user?.role);
 
   return (
     <>
@@ -52,9 +52,24 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
           </Button>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-2">
-          {navItems.map((item) => (
-            <SidebarNavItem key={item.href} item={item} onNavigate={onClose} />
+        <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-2 py-2">
+          {navSections.map((section, sectionIndex) => (
+            <div key={section.label ?? `section-${sectionIndex}`} className="space-y-1">
+              {section.label ? (
+                <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+                  {section.label}
+                </p>
+              ) : null}
+              <div className="space-y-0.5">
+                {section.items.map((item) => (
+                  <SidebarNavItem
+                    key={item.href}
+                    item={item}
+                    onNavigate={onClose}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 

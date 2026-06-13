@@ -6,7 +6,7 @@ import {
   MAX_ACCOUNT_VALUE,
   parsePriceInputToNumber,
 } from "@/shared/helpers/currency-input.helper";
-import { isoToDateOnly } from "@/shared/helpers/payment-date.helper";
+import { isoToDateOnly } from "@/shared/helpers/date.helper";
 import type { IAccount, IAccountPayload } from "@/shared/interfaces/https/account";
 import type { AccountStatus } from "@/shared/types/account-status.types";
 

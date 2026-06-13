@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
+import { PageLayout } from "@/components/PageLayout";
 import { useState } from "react";
 import { Clock, TrendingUp, Users, Wallet } from "lucide-react";
 import {
@@ -10,7 +11,7 @@ import {
   Pie,
   PieChart,
   ResponsiveContainer,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -416,7 +417,7 @@ function SummaryFinancialSection({
                 tickLine={false}
                 width={72}
               />
-              <Tooltip
+              <RechartsTooltip
                 cursor={{ fill: "oklch(0.97 0 0)" }}
                 content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null;
@@ -506,7 +507,7 @@ function SummaryFinancialSection({
                     <Cell key={entry.name} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip
+                <RechartsTooltip
                   formatter={(value) =>
                     formatCurrency(typeof value === "number" ? value : 0)
                   }
@@ -668,7 +669,7 @@ function DashboardRankingsSection({
                 axisLine={false}
                 tickLine={false}
               />
-              <Tooltip
+              <RechartsTooltip
                 formatter={(value) => [
                   formatValue(typeof value === "number" ? value : 0),
                   "Valor",
@@ -834,19 +835,11 @@ function DashboardSummary() {
 
 export default function Dashboard() {
   return (
-    <div className="flex flex-1 flex-col gap-6 p-8">
-      <header className="space-y-1">
-        <h1 className="flex items-center gap-1 text-3xl font-bold tracking-tight text-foreground">
-          Dashboard
-          <span className="text-primary">.</span>
-        </h1>
-        <p className="max-w-2xl text-muted-foreground">
-          Panorama da operação com indicadores, gráficos financeiros e rankings
-          em um só lugar.
-        </p>
-      </header>
-
+    <PageLayout
+      title="Dashboard"
+      description="Panorama da operação com indicadores, gráficos financeiros e rankings em um só lugar."
+    >
       <DashboardSummary />
-    </div>
+    </PageLayout>
   );
 }

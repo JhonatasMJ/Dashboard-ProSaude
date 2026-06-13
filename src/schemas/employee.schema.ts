@@ -1,5 +1,5 @@
 import * as yup from "yup";
-import { formatCpf, isValidCpfLength, stripCpf } from "@/shared/helpers/cpf.helper";
+import { formatCpf, isValidCpfLength, stripCpf } from "@/shared/helpers/input-masks.helper";
 import { brDateInputToIso, isValidBrDateInput, isoToBrDateInput } from "@/shared/helpers/date.helper";
 import type {
   IEmployee,

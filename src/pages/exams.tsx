@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { PageLayout } from "@/components/PageLayout";
 import { toast } from "sonner";
 import { ExamForm } from "@/components/Forms/ExamForm";
 import { ButtonAnimatedIcon } from "@/components/ButtonAnimatedIcon";
@@ -217,17 +218,10 @@ export default function ExamsPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-8 p-8">
-      <header className="space-y-1">
-        <h1 className="flex items-center gap-1 text-3xl font-bold tracking-tight text-foreground">
-          Exames
-          <span className="text-primary">.</span>
-        </h1>
-        <p className="max-w-xl text-muted-foreground">
-          Cadastre exames por empresa, com preço, custo e lucro próprios.
-        </p>
-      </header>
-
+    <PageLayout
+      title="Exames"
+      description="Cadastre exames por empresa, com preço, custo e lucro próprios."
+    >
       <DataTable
         title="Exames"
         description={
@@ -366,6 +360,6 @@ export default function ExamsPage() {
           ) : null}
         </>
       </DataTable>
-    </div>
+    </PageLayout>
   );
 }

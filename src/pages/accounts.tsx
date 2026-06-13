@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { PageLayout } from "@/components/PageLayout";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AccountForm } from "@/components/Forms/AccountForm";
@@ -332,18 +333,10 @@ export default function AccountsPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-8 p-8">
-      <header className="space-y-1">
-        <h1 className="flex items-center gap-1 text-3xl font-bold tracking-tight text-foreground">
-          Contas
-          <span className="text-primary">.</span>
-        </h1>
-        <p className="max-w-xl text-muted-foreground">
-          Liste, cadastre, edite e exclua contas com filtros por nome, status e
-          datas.
-        </p>
-      </header>
-
+    <PageLayout
+      title="Contas"
+      description="Liste, cadastre, edite e exclua contas com filtros por nome, status e datas."
+    >
       <DataTable
         title="Contas"
         description={
@@ -534,6 +527,6 @@ export default function AccountsPage() {
           ) : null}
         </>
       </DataTable>
-    </div>
+    </PageLayout>
   );
 }

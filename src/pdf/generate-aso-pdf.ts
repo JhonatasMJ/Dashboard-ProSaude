@@ -7,7 +7,7 @@ import {
   loadLogoForPdf,
   type LoadedPdfLogo,
 } from "@/pdf/load-logo-for-pdf";
-import { formatCpf } from "@/shared/helpers/cpf.helper";
+import { formatCpf } from "@/shared/helpers/input-masks.helper";
 import { formatDateBr, parseDateOnlyInput } from "@/shared/helpers/date.helper";
 import { fetchAllPaginated } from "@/shared/helpers/fetch-all-paginated.helper";
 import { formatCnpj } from "@/shared/helpers/input-masks.helper";

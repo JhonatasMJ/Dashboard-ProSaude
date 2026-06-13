@@ -11,3 +11,8 @@ export function matchesSearchText(label: string, query: string): boolean {
   if (!normalizedQuery) return true;
   return normalizeSearchText(label).includes(normalizedQuery);
 }
+
+export function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).trim()}…`;
+}
