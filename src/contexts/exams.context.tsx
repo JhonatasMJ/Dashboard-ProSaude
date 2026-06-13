@@ -21,12 +21,12 @@ import {
   formToExamCreatePayload,
   formToExamCreatePayloads,
   formToExamUpdatePayload,
-} from "@/shared/helpers/exam-form.helper";
+  type ExamFormData,
+} from "@/schemas/exam.schema";
 import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
 import type { IExam } from "@/shared/interfaces/https/exam";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import { examService } from "@/shared/services/exam.service";
-import type { ExamFormData } from "@/types/exam-form.types";
 
 export interface ExamsContextValue {
   exams: IExam[];

@@ -13,12 +13,14 @@ import {
   TABLE_PAGE_SIZE,
 } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
-import { formToUserRegisterPayload } from "@/shared/helpers/user-form.helper";
+import {
+  formToUserRegisterPayload,
+  type UserRegisterFormData,
+} from "@/schemas/user-register.schema";
 import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
 import type { IUser } from "@/shared/interfaces/https/user";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import { userService } from "@/shared/services/user.service";
-import type { UserRegisterFormData } from "@/types/user-register-form.types";
 
 export interface UsersContextValue {
   users: IUser[];

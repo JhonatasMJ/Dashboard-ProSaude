@@ -1,6 +1,11 @@
 import * as yup from "yup";
-import { isValidCpfLength } from "@/shared/helpers/cpf.helper";
-import { isValidBrDateInput } from "@/shared/helpers/date.helper";
+import { formatCpf, isValidCpfLength, stripCpf } from "@/shared/helpers/cpf.helper";
+import { brDateInputToIso, isValidBrDateInput, isoToBrDateInput } from "@/shared/helpers/date.helper";
+import type {
+  IEmployee,
+  IEmployeeCreatePayload,
+  IEmployeeUpdatePayload,
+} from "@/shared/interfaces/https/employee";
 
 export const employeeSchema = yup.object({
   companyId: yup.string().required("Empresa é obrigatória"),
@@ -23,3 +28,41 @@ export const employeeSchema = yup.object({
     ),
   active: yup.boolean().default(true),
 });
+
+export type EmployeeFormData = yup.InferType<typeof employeeSchema>;
+
+export function employeeToFormValues(employee: IEmployee): EmployeeFormData {
+  return {
+    companyId: employee.company.id,
+    name: employee.name,
+    documentNumber: formatCpf(employee.documentNumber),
+    jobTitle: employee.jobTitle ?? "",
+    birthDate: isoToBrDateInput(employee.birthDate),
+    active: employee.active,
+  };
+}
+
+export function formToEmployeeCreatePayload(
+  data: EmployeeFormData
+): IEmployeeCreatePayload {
+  return {
+    companyId: data.companyId,
+    name: data.name.trim(),
+    documentNumber: stripCpf(data.documentNumber),
+    jobTitle: data.jobTitle?.trim() ? data.jobTitle.trim() : null,
+    birthDate: brDateInputToIso(data.birthDate),
+    active: data.active,
+  };
+}
+
+export function formToEmployeeUpdatePayload(
+  data: EmployeeFormData
+): IEmployeeUpdatePayload {
+  return {
+    name: data.name.trim(),
+    documentNumber: stripCpf(data.documentNumber),
+    jobTitle: data.jobTitle?.trim() ? data.jobTitle.trim() : null,
+    birthDate: brDateInputToIso(data.birthDate),
+    active: data.active,
+  };
+}

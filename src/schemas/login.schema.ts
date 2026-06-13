@@ -8,3 +8,5 @@ export const loginSchema = yup.object({
   password: yup.string().required("Senha é obrigatória"),
   rememberMe: yup.boolean().default(false),
 });
+
+export type LoginFormData = yup.InferType<typeof loginSchema>;

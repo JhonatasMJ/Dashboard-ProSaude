@@ -13,10 +13,11 @@ import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import {
   formToAsoCreatePayload,
   formToAsoUpdatePayload,
-} from "@/shared/helpers/aso-form.helper";
+  type AsoFormData,
+} from "@/schemas/aso.schema";
 import { fetchAllPaginated } from "@/shared/helpers/fetch-all-paginated.helper";
 import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
-import type { IAso } from "@/shared/interfaces/https/aso";
+import type { AsoType, IAso } from "@/shared/interfaces/https/aso";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IExam } from "@/shared/interfaces/https/exam";
 import type { IOccupationalRisk } from "@/shared/interfaces/https/occupational-risk";
@@ -25,8 +26,6 @@ import { asoService } from "@/shared/services/aso.service";
 import { employeeService } from "@/shared/services/employee.service";
 import { examService } from "@/shared/services/exam.service";
 import { occupationalRiskService } from "@/shared/services/occupational-risk.service";
-import type { AsoType } from "@/shared/types/aso-type.types";
-import type { AsoFormData } from "@/types/aso-form.types";
 
 export interface AsosContextValue {
   asos: IAso[];

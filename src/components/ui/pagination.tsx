@@ -4,7 +4,7 @@ import {
   ChevronRight,
   MoreHorizontal,
 } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 

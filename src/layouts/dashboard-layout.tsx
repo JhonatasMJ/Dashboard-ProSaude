@@ -2,8 +2,8 @@ import { Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.svg";
-import { AppSidebar } from "@/components/layout/app-sidebar";
-import { Button } from "@/components/ui/button";
+import { AppSidebar } from "@/components/layout/AppSidebar";
+import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/auth.context";
 import { DashboardProvider } from "@/contexts/dashboard.context";
 

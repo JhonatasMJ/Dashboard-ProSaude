@@ -17,7 +17,8 @@ import { fetchAllPaginated } from "@/shared/helpers/fetch-all-paginated.helper";
 import {
   formToEmployeeExamCreatePayloads,
   formToEmployeeExamUpdatePayload,
-} from "@/shared/helpers/employee-exam-form.helper";
+  type EmployeeExamFormData,
+} from "@/schemas/employee-exam.schema";
 import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
 import type { ICompany } from "@/shared/interfaces/https/company";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
@@ -30,7 +31,6 @@ import { employeeService } from "@/shared/services/employee.service";
 import { examService } from "@/shared/services/exam.service";
 import type { EmployeeExamsReportListParams } from "@/pdf/employee-exams-report.types";
 import type { PaymentStatus } from "@/shared/types/payment-status.types";
-import type { EmployeeExamFormData } from "@/types/employee-exam-form.types";
 
 export interface EmployeeExamsContextValue {
   links: IEmployeeExam[];

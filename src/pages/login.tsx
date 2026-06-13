@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.svg";
 import cover from "@/assets/login-cover.jpg";
-import { LoginForm } from "@/components/Forms/login-form";
+import { LoginForm } from "@/components/Forms/LoginForm";
 import { useAuth } from "@/contexts/auth.context";  
 
 export default function Login() {

@@ -13,14 +13,13 @@ import {
   TABLE_PAGE_SIZE,
 } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
-import { formToAccountPayload } from "@/shared/helpers/account-form.helper";
+import { formToAccountPayload, type AccountFormData } from "@/schemas/account.schema";
 import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import type { IAccount } from "@/shared/interfaces/https/account";
 import type { AccountStatus } from "@/shared/types/account-status.types";
 import { accountService } from "@/shared/services/account.service";
 import type { AccountsReportListParams } from "@/pdf/accounts-report.types";
-import type { AccountFormData } from "@/types/account-form.types";
 
 export interface AccountsContextValue {
   accounts: IAccount[];

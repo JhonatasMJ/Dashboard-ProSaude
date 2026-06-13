@@ -2,16 +2,37 @@ import { addYears, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import type { AsoPdfData } from "@/pdf/aso-pdf.types";
 import { PDF_BRAND } from "@/pdf/brand-theme";
 import {
   loadLogoForPdf,
   type LoadedPdfLogo,
 } from "@/pdf/load-logo-for-pdf";
+import { formatCpf } from "@/shared/helpers/cpf.helper";
 import { formatDateBr, parseDateOnlyInput } from "@/shared/helpers/date.helper";
-import type { IAsoExamRef, IAsoOccupationalRiskRef } from "@/shared/interfaces/https/aso";
-import { ASO_TYPE_LABELS, type AsoType } from "@/shared/types/aso-type.types";
+import { fetchAllPaginated } from "@/shared/helpers/fetch-all-paginated.helper";
+import { formatCnpj } from "@/shared/helpers/input-masks.helper";
+import type {
+  IAso,
+  IAsoExamRef,
+  IAsoOccupationalRiskRef,
+} from "@/shared/interfaces/https/aso";
+import {
+  ASO_TYPE_LABELS,
+  type AsoType,
+} from "@/shared/interfaces/https/aso";
+import type { IEmployee } from "@/shared/interfaces/https/employee";
+import { companyService } from "@/shared/services/company.service";
 import type { OccupationalRiskCategory } from "@/shared/types/occupational-risk-category.types";
+
+export interface AsoPdfData {
+  aso: IAso;
+  employeeName: string;
+  employeeCpf: string;
+  employeeBirthDate: string;
+  employeeJobTitle: string;
+  companyName: string;
+  companyTaxId: string;
+}
 
 const MARGIN = 10;
 const PAGE_WIDTH = 210;
@@ -426,10 +447,36 @@ function drawValiditySection(
   return startY + sectionHeight;
 }
 
-export async function generateAsoPdf(data: AsoPdfData): Promise<void> {
+export async function generateAsoPdf(
+  aso: IAso,
+  employees: IEmployee[]
+): Promise<void> {
+  const employee =
+    employees.find((item) => item.id === aso.employee.id) ?? null;
+
+  const companies = await fetchAllPaginated((page, pageSize) =>
+    companyService.list({ page, pageSize })
+  );
+  const company = companies.find(
+    (item) => item.id === aso.employee.company.id
+  );
+
+  const data: AsoPdfData = {
+    aso,
+    employeeName: employee?.name ?? aso.employee.name,
+    employeeCpf: employee?.documentNumber
+      ? formatCpf(employee.documentNumber)
+      : "—",
+    employeeBirthDate: employee?.birthDate
+      ? formatDateBr(employee.birthDate)
+      : "—",
+    employeeJobTitle: employee?.jobTitle?.trim() || "—",
+    companyName: company?.name ?? aso.employee.company.name,
+    companyTaxId: company?.taxId ? formatCnpj(company.taxId) : "—",
+  };
+
   const logo = await loadLogoForPdf("white");
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const { aso } = data;
   const asoDateFormatted = formatDateBr(aso.date);
   const validityDate = getValidityDate(aso.date);
 

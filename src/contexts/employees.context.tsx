@@ -17,14 +17,14 @@ import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import {
   formToEmployeeCreatePayload,
   formToEmployeeUpdatePayload,
-} from "@/shared/helpers/employee-form.helper";
+  type EmployeeFormData,
+} from "@/schemas/employee.schema";
 import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
 import type { ICompany } from "@/shared/interfaces/https/company";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import { companyService } from "@/shared/services/company.service";
 import { employeeService } from "@/shared/services/employee.service";
-import type { EmployeeFormData } from "@/types/employee-form.types";
 
 export interface EmployeesContextValue {
   employees: IEmployee[];

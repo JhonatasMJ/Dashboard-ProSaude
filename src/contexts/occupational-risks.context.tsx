@@ -13,13 +13,15 @@ import {
   TABLE_PAGE_SIZE,
 } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
-import { formToOccupationalRiskPayload } from "@/shared/helpers/occupational-risk-form.helper";
+import {
+  formToOccupationalRiskPayload,
+  type OccupationalRiskFormData,
+} from "@/schemas/occupational-risk.schema";
 import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
 import type { IOccupationalRisk } from "@/shared/interfaces/https/occupational-risk";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import { occupationalRiskService } from "@/shared/services/occupational-risk.service";
 import type { OccupationalRiskCategory } from "@/shared/types/occupational-risk-category.types";
-import type { OccupationalRiskFormData } from "@/types/occupational-risk-form.types";
 
 export interface OccupationalRisksContextValue {
   risks: IOccupationalRisk[];

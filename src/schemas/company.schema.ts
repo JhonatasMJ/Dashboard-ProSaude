@@ -1,4 +1,5 @@
 import * as yup from "yup";
+import type { ICompany, ICompanyPayload } from "@/shared/interfaces/https/company";
 
 export const companySchema = yup.object({
   name: yup.string().required("Nome da empresa é obrigatório"),
@@ -30,3 +31,36 @@ export const companySchema = yup.object({
       (value) => !value?.trim() || value.trim().length === 2
     ),
 });
+
+export type CompanyFormData = yup.InferType<typeof companySchema>;
+
+export function companyToFormValues(company: ICompany): CompanyFormData {
+  return {
+    name: company.name,
+    taxId: company.taxId,
+    email: company.email ?? "",
+    phone: company.phone,
+    zipCode: "",
+    street: company.street,
+    number: company.number,
+    neighborhood: company.neighborhood,
+    city: company.city,
+    state: company.state,
+  };
+}
+
+export function formToCompanyPayload(data: CompanyFormData): ICompanyPayload {
+  const email = data.email?.trim();
+
+  return {
+    name: data.name.trim(),
+    taxId: data.taxId.trim(),
+    ...(email ? { email } : {}),
+    phone: data.phone?.trim() ?? "",
+    street: data.street?.trim() ?? "",
+    number: data.number?.trim() ?? "",
+    neighborhood: data.neighborhood?.trim() ?? "",
+    city: data.city?.trim() ?? "",
+    state: data.state?.trim() ? data.state.trim().toUpperCase() : "",
+  };
+}

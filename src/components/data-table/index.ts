@@ -1,15 +1,15 @@
-export { DataTable } from "@/components/data-table/data-table";
+export { DataTable } from "@/components/data-table/DataTable";
 export type {
   DataTableEmptyState,
   DataTableProps,
-} from "@/components/data-table/data-table";
-export { DataTableSearchFilter } from "@/components/data-table/data-table-search-filter";
-export { DataTableSkeleton } from "@/components/data-table/data-table-skeleton";
-export { DataTableRowActions } from "@/components/data-table/data-table-row-actions";
+} from "@/components/data-table/DataTable";
+export { DataTableSearchFilter } from "@/components/data-table/DataTableSearchFilter";
+export { DataTableSkeleton } from "@/components/data-table/DataTableSkeleton";
+export { DataTableRowActions } from "@/components/data-table/DataTableRowActions";
 export {
   DATA_TABLE_CELL_CLASS,
   DATA_TABLE_COMPACT_CELL_CLASS,
   DATA_TABLE_HEAD_CLASS,
   DATA_TABLE_HEADER_ROW_CLASS,
   getDataTableRowClassName,
-} from "@/components/data-table/data-table-utils";
+} from "@/components/data-table/DataTableUtils";

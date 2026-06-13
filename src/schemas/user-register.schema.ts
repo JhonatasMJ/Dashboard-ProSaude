@@ -1,4 +1,5 @@
 import * as yup from "yup";
+import type { IUserRegisterRequest } from "@/shared/interfaces/https/user-register-request";
 
 export const userRegisterSchema = yup.object({
   name: yup
@@ -18,3 +19,15 @@ export const userRegisterSchema = yup.object({
     .required("Confirme a senha")
     .oneOf([yup.ref("password")], "As senhas não coincidem"),
 });
+
+export type UserRegisterFormData = yup.InferType<typeof userRegisterSchema>;
+
+export function formToUserRegisterPayload(
+  data: UserRegisterFormData
+): IUserRegisterRequest {
+  return {
+    name: data.name.trim(),
+    email: data.email.trim(),
+    password: data.password,
+  };
+}
