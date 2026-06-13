@@ -1,8 +1,25 @@
-import logoUrl from "@/assets/logoPdf.svg?url";
+import logoSidebarUrl from "@/assets/logo.svg?url";
+import logoWhiteUrl from "@/assets/logoBranca.svg?url";
+import logoPdfUrl from "@/assets/logoPdf.svg?url";
 
 const LOGO_RENDER_WIDTH = 520;
 
-export async function loadLogoForPdf(): Promise<string> {
+export type PdfLogoVariant = "pdf" | "sidebar" | "white";
+
+export interface LoadedPdfLogo {
+  dataUrl: string;
+  aspectRatio: number;
+}
+
+export async function loadLogoForPdf(
+  variant: PdfLogoVariant = "pdf"
+): Promise<LoadedPdfLogo> {
+  const logoUrl =
+    variant === "white"
+      ? logoWhiteUrl
+      : variant === "sidebar"
+        ? logoSidebarUrl
+        : logoPdfUrl;
   const response = await fetch(logoUrl);
   const blob = await response.blob();
   const objectUrl = URL.createObjectURL(blob);
@@ -11,10 +28,10 @@ export async function loadLogoForPdf(): Promise<string> {
     return await new Promise((resolve, reject) => {
       const image = new Image();
       image.onload = () => {
-        const aspect = image.height / image.width;
+        const aspectRatio = image.height / image.width;
         const canvas = document.createElement("canvas");
         canvas.width = LOGO_RENDER_WIDTH;
-        canvas.height = Math.round(LOGO_RENDER_WIDTH * aspect);
+        canvas.height = Math.round(LOGO_RENDER_WIDTH * aspectRatio);
 
         const context = canvas.getContext("2d");
         if (!context) {
@@ -23,7 +40,10 @@ export async function loadLogoForPdf(): Promise<string> {
         }
 
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/png"));
+        resolve({
+          dataUrl: canvas.toDataURL("image/png"),
+          aspectRatio,
+        });
       };
       image.onerror = () => reject(new Error("Não foi possível carregar a logo."));
       image.src = objectUrl;

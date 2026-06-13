@@ -284,12 +284,12 @@ export async function generateAccountsReportPdf(
   options: GenerateAccountsReportPdfInput
 ): Promise<void> {
   const generatedAt = options.generatedAt ?? new Date();
-  const logoDataUrl = await loadLogoForPdf();
+  const logo = await loadLogoForPdf();
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const tableWidth = getContentWidth(doc);
   const totalValue = accounts.reduce((sum, account) => sum + account.amount, 0);
 
-  drawReportHeader(doc, logoDataUrl);
+  drawReportHeader(doc, logo.dataUrl);
   const tableStartY = drawInfoSection(
     doc,
     generatedAt,
@@ -345,7 +345,7 @@ export async function generateAccountsReportPdf(
   for (let page = 1; page <= pageCount; page += 1) {
     doc.setPage(page);
     if (page > 1) {
-      drawCompactHeader(doc, logoDataUrl);
+      drawCompactHeader(doc, logo.dataUrl);
     }
     drawPageFooter(doc, page, pageCount);
   }

@@ -293,7 +293,7 @@ export async function generateEmployeeExamsReportPdf(
 ): Promise<void> {
   const sortedLinks = sortLinksByEmployeeName(links);
   const generatedAt = options.generatedAt ?? new Date();
-  const logoDataUrl = await loadLogoForPdf();
+  const logo = await loadLogoForPdf();
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const tableWidth = getContentWidth(doc);
   const totalExamValue = sortedLinks.reduce(
@@ -301,7 +301,7 @@ export async function generateEmployeeExamsReportPdf(
     0
   );
 
-  drawReportHeader(doc, logoDataUrl);
+  drawReportHeader(doc, logo.dataUrl);
   const tableStartY = drawInfoSection(
     doc,
     generatedAt,
@@ -359,7 +359,7 @@ export async function generateEmployeeExamsReportPdf(
   for (let page = 1; page <= pageCount; page += 1) {
     doc.setPage(page);
     if (page > 1) {
-      drawCompactHeader(doc, logoDataUrl);
+      drawCompactHeader(doc, logo.dataUrl);
     }
     drawPageFooter(doc, page, pageCount);
   }

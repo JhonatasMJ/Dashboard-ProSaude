@@ -2,6 +2,7 @@ import type { ComponentType, HTMLAttributes, RefAttributes } from "react";
 import type { AnimatedIconHandle } from "@/components/layout/sidebar-animated-icon";
 import type { UserRole } from "@/shared/interfaces/https/authenticate-response";
 import { canManageUsers } from "@/shared/helpers/user-permissions.helper";
+import { ClipboardCheckIcon } from "@/components/ui/clipboard-check";
 import { FileTextIcon } from "@/components/ui/file-text";
 import { HomeIcon } from "@/components/ui/home";
 import { LayoutGridIcon } from "@/components/ui/layout-grid";
@@ -61,6 +62,11 @@ export const dashboardNavItems: NavItem[] = [
     title: "Vínculos",
     href: "/dashboard/employee-exams",
     icon: LayoutGridIcon,
+  },
+  {
+    title: "Emissão de ASO",
+    href: "/dashboard/asos",
+    icon: ClipboardCheckIcon,
   },
   {
     title: "Usuários",

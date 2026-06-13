@@ -1,6 +1,7 @@
 import { ButtonAnimatedIcon } from "@/components/button-animated-icon";
 import { Button } from "@/components/ui/button";
 import { DeleteIcon } from "@/components/ui/delete";
+import { FileTextIcon } from "@/components/ui/file-text";
 import { SquarePenIcon } from "@/components/ui/square-pen";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
 import { cn } from "@/lib/utils";
@@ -10,8 +11,12 @@ interface DataTableRowActionsProps {
   deleteLabel: string;
   onEdit: () => void;
   onDelete: () => void;
+  downloadLabel?: string;
+  onDownload?: () => void;
+  isDownloading?: boolean;
   showEdit?: boolean;
   showDelete?: boolean;
+  showDownload?: boolean;
   size?: "default" | "compact";
   className?: string;
 }
@@ -21,13 +26,18 @@ export function DataTableRowActions({
   deleteLabel,
   onEdit,
   onDelete,
+  downloadLabel,
+  onDownload,
+  isDownloading = false,
   showEdit = true,
   showDelete = true,
+  showDownload = false,
   size = "default",
   className,
 }: DataTableRowActionsProps) {
   const editIcon = useButtonAnimatedIcon();
   const deleteIcon = useButtonAnimatedIcon();
+  const downloadIcon = useButtonAnimatedIcon();
   const iconSize = size === "compact" ? 14 : 16;
   const buttonSize = size === "compact" ? "size-8" : "icon-lg";
 
@@ -50,6 +60,27 @@ export function DataTableRowActions({
             iconRef={editIcon.iconRef}
             size={iconSize}
             className="text-primary"
+          />
+        </Button>
+      )}
+      {showDownload && onDownload && (
+        <Button
+          variant="ghost"
+          size={size === "compact" ? "icon" : "icon-lg"}
+          className={cn(
+            "rounded-md bg-secondary/10 text-secondary hover:bg-secondary/20 hover:text-secondary",
+            buttonSize
+          )}
+          aria-label={downloadLabel ?? "Baixar"}
+          onClick={onDownload}
+          disabled={isDownloading}
+          {...downloadIcon.rowHandlers}
+        >
+          <ButtonAnimatedIcon
+            icon={FileTextIcon}
+            iconRef={downloadIcon.iconRef}
+            size={iconSize}
+            className="text-secondary"
           />
         </Button>
       )}

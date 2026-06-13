@@ -5,6 +5,7 @@ import { EmployeeExamsProvider } from "@/contexts/employee-exams.context";
 import { EmployeesProvider } from "@/contexts/employees.context";
 import { ExamsProvider } from "@/contexts/exams.context";
 import { UsersProvider } from "@/contexts/users.context";
+import { AsosProvider } from "@/contexts/asos.context";
 import { OccupationalRisksProvider } from "@/contexts/occupational-risks.context";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import CompaniesPage from "@/pages/companies";
@@ -14,6 +15,7 @@ import EmployeesPage from "@/pages/employees";
 import ExamsPage from "@/pages/exams";
 import UsersPage from "@/pages/users";
 import EmployeeExamsPage from "@/pages/employee-exams";
+import AsosPage from "@/pages/asos";
 import OccupationalRisksPage from "@/pages/occupational-risks";
 import Login from "@/pages/login";
 import { AdminRoute } from "@/routes/admin-route";
@@ -90,6 +92,15 @@ export const router = createBrowserRouter([
               </EmployeeExamsProvider>
             ),
             handle: { title: "Vínculos" },
+          },
+          {
+            path: "asos",
+            element: (
+              <AsosProvider>
+                <AsosPage />
+              </AsosProvider>
+            ),
+            handle: { title: "Emissão de ASO" },
           },
           {
             path: "users",
