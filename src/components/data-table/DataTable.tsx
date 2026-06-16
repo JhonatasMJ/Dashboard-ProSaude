@@ -10,8 +10,8 @@ export interface DataTableEmptyState {
 }
 
 export interface DataTableProps {
-  title: string;
-  description: ReactNode;
+  title?: string;
+  description?: ReactNode;
   headerActions?: ReactNode;
   filters?: ReactNode;
   warning?: ReactNode;

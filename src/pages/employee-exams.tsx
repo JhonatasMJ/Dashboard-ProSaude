@@ -10,9 +10,12 @@ import {
   DataTable,
   DataTableRowActions,
   DATA_TABLE_COMPACT_CELL_CLASS,
+  DATA_TABLE_HEAD_CLASS,
+  DATA_TABLE_HEADER_ROW_CLASS,
   getDataTableRowClassName,
 } from "@/components/data-table";
 import { DeleteModal } from "@/components/DeleteModal";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormSheet } from "@/components/FormSheet";
 import { DatePickerLabel } from "@/components/DatePickerLabel";
 import { Button } from "@/components/ui/Button";
@@ -37,6 +40,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
 import { useCrudSheetState } from "@/hooks/use-crud-sheet-state";
 import { useEmployeeExams } from "@/contexts/employee-exams.context";
@@ -193,14 +197,25 @@ function LinkRow({
   rowIndex,
   onEdit,
   onDelete,
+  isSelected,
+  onToggleSelect,
 }: {
   link: IEmployeeExam;
   rowIndex: number;
   onEdit: (link: IEmployeeExam) => void;
   onDelete: (link: IEmployeeExam) => void;
+  isSelected: boolean;
+  onToggleSelect: () => void;
 }) {
   return (
     <TableRow className={getDataTableRowClassName(rowIndex)}>
+      <TableCell className={cn(DATA_TABLE_COMPACT_CELL_CLASS, "w-[44px]")}>
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => onToggleSelect()}
+          aria-label={`Selecionar vínculo de ${link.employee.name}`}
+        />
+      </TableCell>
       <TableCell className={DATA_TABLE_COMPACT_CELL_CLASS}>
         <PaymentStatusBadge status={link.paymentStatus ?? "PENDING"} />
       </TableCell>
@@ -379,6 +394,7 @@ export default function EmployeeExamsPage() {
     setExamDateToFilter,
     exportListParams,
     setPage,
+    bulkPayLinks,
   } = useEmployeeExams();
 
   const {
@@ -405,6 +421,35 @@ export default function EmployeeExamsPage() {
     examDateFromFilter.length > 0 ||
     examDateToFilter.length > 0;
   const isEmptyList = !isLoading && !error && links.length === 0;
+
+  const [selectedLinkIds, setSelectedLinkIds] = useState<string[]>([]);
+  const [bulkPaidAt, setBulkPaidAt] = useState("");
+  const [isBulkPaying, setIsBulkPaying] = useState(false);
+  const [isBulkPayModalOpen, setIsBulkPayModalOpen] = useState(false);
+
+  const visibleIds = links.map((link) => link.id);
+  const isAllSelected =
+    visibleIds.length > 0 &&
+    visibleIds.every((id) => selectedLinkIds.includes(id));
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedLinkIds((prev) =>
+        prev.filter((id) => !visibleIds.includes(id))
+      );
+    } else {
+      setSelectedLinkIds((prev) => [
+        ...prev,
+        ...visibleIds.filter((id) => !prev.includes(id)),
+      ]);
+    }
+  };
+
+  const handleToggleSelectOne = (id: string) => {
+    setSelectedLinkIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
   const canCreate = employees.length > 0 && exams.length > 0;
 
   const handleOpenCreate = () => {
@@ -459,6 +504,33 @@ export default function EmployeeExamsPage() {
     }
   };
 
+  const handleBulkPay = async () => {
+    if (!selectedLinkIds.length) {
+      toast.error("Selecione pelo menos um vínculo para marcar como pago.");
+      return;
+    }
+
+    if (!bulkPaidAt) return;
+
+    setIsBulkPaying(true);
+    try {
+      await bulkPayLinks(selectedLinkIds, bulkPaidAt);
+      toast.success("Vínculos marcados como pagos com sucesso.");
+      setSelectedLinkIds([]);
+      setIsBulkPayModalOpen(false);
+      setBulkPaidAt("");
+    } catch (err) {
+      toast.error(
+        getApiErrorMessage(
+          err,
+          "Não foi possível marcar os vínculos selecionados como pagos."
+        )
+      );
+    } finally {
+      setIsBulkPaying(false);
+    }
+  };
+
   return (
     <PageLayout
       title="Vínculos"
@@ -481,6 +553,17 @@ export default function EmployeeExamsPage() {
         }
         headerActions={
           <>
+          {selectedLinkIds.length > 0 ? (
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-md py-4.5"
+              onClick={() => setIsBulkPayModalOpen(true)}
+              disabled={isLoading || isSubmitting || isLoadingFilters}
+            >
+              Marcar como pagos
+            </Button>
+          ) : null}
             <Button
               className="rounded-md bg-secondary py-4.5 text-secondary-foreground hover:bg-secondary/90"
               size="lg"
@@ -629,6 +712,40 @@ export default function EmployeeExamsPage() {
         skeletonColumns={4}
         overlays={
           <>
+            <ConfirmModal
+              open={isBulkPayModalOpen}
+              onOpenChange={(open) => {
+                setIsBulkPayModalOpen(open);
+                if (!open) {
+                  setBulkPaidAt("");
+                }
+              }}
+              title="Marcar vínculos como pagos"
+              description={
+                <div className="mt-2 space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Selecione a data de pagamento que será aplicada aos{" "}
+                    <span className="font-semibold text-foreground">
+                      {selectedLinkIds.length}
+                    </span>{" "}
+                    vínculo(s) selecionado(s).
+                  </p>
+                  <DatePickerLabel
+                    id="bulk-link-paid-at"
+                    label="Data de pagamento"
+                    value={bulkPaidAt}
+                    onChange={setBulkPaidAt}
+                    placeholder="Selecione..."
+                    compact
+                  />
+                </div>
+              }
+              confirmLabel="Confirmar"
+              cancelLabel="Cancelar"
+              confirmVariant="default"
+              isLoading={isBulkPaying}
+              onConfirm={handleBulkPay}
+            />
             <EmployeeExamFormSheet
               open={formOpen}
               onOpenChange={handleFormOpenChange}
@@ -657,7 +774,14 @@ export default function EmployeeExamsPage() {
         <>
           <Table>
             <TableHeader>
-              <TableRow className="border-border/80 bg-muted/40 hover:bg-muted/40">
+              <TableRow className={DATA_TABLE_HEADER_ROW_CLASS}>
+                <TableHead className={cn(DATA_TABLE_HEAD_CLASS, "px-3")}>
+                  <Checkbox
+                    checked={isAllSelected}
+                    onCheckedChange={handleToggleSelectAll}
+                    aria-label="Selecionar todos os vínculos visíveis"
+                  />
+                </TableHead>
                 <TableHead
                   className={cn(
                     DATA_TABLE_COMPACT_CELL_CLASS,
@@ -732,6 +856,8 @@ export default function EmployeeExamsPage() {
                   link={link}
                   onEdit={handleOpenEdit}
                   onDelete={setDeletingLink}
+                  isSelected={selectedLinkIds.includes(link.id)}
+                  onToggleSelect={() => handleToggleSelectOne(link.id)}
                 />
               ))}
             </TableBody>

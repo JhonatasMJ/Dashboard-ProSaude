@@ -14,6 +14,7 @@ import {
   getDataTableRowClassName,
 } from "@/components/data-table";
 import { DeleteModal } from "@/components/DeleteModal";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormSheet } from "@/components/FormSheet";
 import { Button } from "@/components/ui/Button";
 import { FileTextIcon } from "@/components/ui/FileText";
@@ -36,6 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { useAccounts } from "@/contexts/accounts.context";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
 import { useCrudSheetState } from "@/hooks/use-crud-sheet-state";
@@ -150,14 +152,25 @@ function AccountRow({
   rowIndex,
   onEdit,
   onDelete,
+  isSelected,
+  onToggleSelect,
 }: {
   account: IAccount;
   rowIndex: number;
   onEdit: (account: IAccount) => void;
   onDelete: (account: IAccount) => void;
+  isSelected: boolean;
+  onToggleSelect: () => void;
 }) {
   return (
     <TableRow className={getDataTableRowClassName(rowIndex)}>
+      <TableCell className={DATA_TABLE_CELL_CLASS}>
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => onToggleSelect()}
+          aria-label={`Selecionar conta ${account.name}`}
+        />
+      </TableCell>
       <TableCell className={DATA_TABLE_CELL_CLASS}>
         <AccountStatusBadge status={account.status} />
       </TableCell>
@@ -270,6 +283,7 @@ export default function AccountsPage() {
     setPaidAtToFilter,
     exportListParams,
     setPage,
+    bulkPayAccounts,
   } = useAccounts();
   const {
     formOpen,
@@ -285,6 +299,11 @@ export default function AccountsPage() {
   const plusIconEmpty = useButtonAnimatedIcon();
   const pdfIcon = useButtonAnimatedIcon();
 
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const [bulkPaidAt, setBulkPaidAt] = useState("");
+  const [isBulkPaying, setIsBulkPaying] = useState(false);
+  const [isBulkPayModalOpen, setIsBulkPayModalOpen] = useState(false);
+
   const totalCount = meta?.total ?? 0;
   const hasActiveFilters =
     nameFilter.trim().length > 0 ||
@@ -294,6 +313,30 @@ export default function AccountsPage() {
     paidAtFromFilter.length > 0 ||
     paidAtToFilter.length > 0;
   const isEmptyList = !isLoading && !error && accounts.length === 0;
+
+  const visibleIds = accounts.map((account) => account.id);
+  const isAllSelected =
+    visibleIds.length > 0 &&
+    visibleIds.every((id) => selectedAccountIds.includes(id));
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedAccountIds((prev) =>
+        prev.filter((id) => !visibleIds.includes(id))
+      );
+    } else {
+      setSelectedAccountIds((prev) => [
+        ...prev,
+        ...visibleIds.filter((id) => !prev.includes(id)),
+      ]);
+    }
+  };
+
+  const handleToggleSelectOne = (id: string) => {
+    setSelectedAccountIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
 
   const handleExportPdf = async () => {
     setIsExportingPdf(true);
@@ -332,6 +375,33 @@ export default function AccountsPage() {
     }
   };
 
+  const handleBulkPay = async () => {
+    if (!selectedAccountIds.length) {
+      toast.error("Selecione pelo menos uma conta para marcar como paga.");
+      return;
+    }
+
+    if (!bulkPaidAt) return;
+
+    setIsBulkPaying(true);
+    try {
+      await bulkPayAccounts(selectedAccountIds, bulkPaidAt);
+      toast.success("Contas marcadas como pagas com sucesso.");
+      setSelectedAccountIds([]);
+      setIsBulkPayModalOpen(false);
+      setBulkPaidAt("");
+    } catch (err) {
+      toast.error(
+        getApiErrorMessage(
+          err,
+          "Não foi possível marcar as contas selecionadas como pagas."
+        )
+      );
+    } finally {
+      setIsBulkPaying(false);
+    }
+  };
+
   return (
     <PageLayout
       title="Contas"
@@ -354,6 +424,21 @@ export default function AccountsPage() {
         }
         headerActions={
           <>
+          {selectedAccountIds.length > 0 ? (
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-md py-4.5"
+              onClick={() => setIsBulkPayModalOpen(true)}
+              disabled={
+                isLoading ||
+                isSubmitting ||
+                !selectedAccountIds.length
+              }
+            >
+              Marcar como pagas
+            </Button>
+          ) : null}
             <Button
               className="rounded-md bg-secondary py-4.5 text-secondary-foreground hover:bg-secondary/90"
               size="lg"
@@ -463,6 +548,40 @@ export default function AccountsPage() {
         skeletonColumns={4}
         overlays={
           <>
+            <ConfirmModal
+              open={isBulkPayModalOpen}
+              onOpenChange={(open) => {
+                setIsBulkPayModalOpen(open);
+                if (!open) {
+                  setBulkPaidAt("");
+                }
+              }}
+              title="Marcar contas como pagas"
+              description={
+                <div className="mt-2 space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Selecione a data de pagamento que será aplicada às{" "}
+                    <span className="font-semibold text-foreground">
+                      {selectedAccountIds.length}
+                    </span>{" "}
+                    conta(s) selecionada(s).
+                  </p>
+                  <DatePickerLabel
+                    id="bulk-paid-at"
+                    label="Data de pagamento"
+                    value={bulkPaidAt}
+                    onChange={setBulkPaidAt}
+                    placeholder="Selecione..."
+                    compact
+                  />
+                </div>
+              }
+              confirmLabel="Confirmar"
+              cancelLabel="Cancelar"
+              confirmVariant="default"
+              isLoading={isBulkPaying}
+              onConfirm={handleBulkPay}
+            />
             <AccountFormSheet
               open={formOpen}
               onOpenChange={handleFormOpenChange}
@@ -491,6 +610,13 @@ export default function AccountsPage() {
           <Table>
             <TableHeader>
               <TableRow className={DATA_TABLE_HEADER_ROW_CLASS}>
+                <TableHead className={DATA_TABLE_HEAD_CLASS}>
+                  <Checkbox
+                    checked={isAllSelected}
+                    onCheckedChange={handleToggleSelectAll}
+                    aria-label="Selecionar todas as contas visíveis"
+                  />
+                </TableHead>
                 <TableHead className={DATA_TABLE_HEAD_CLASS}>Status</TableHead>
                 <TableHead className={DATA_TABLE_HEAD_CLASS}>Nome</TableHead>
                 <TableHead className={DATA_TABLE_HEAD_CLASS}>Valor</TableHead>
@@ -513,6 +639,8 @@ export default function AccountsPage() {
                   account={account}
                   onEdit={openEdit}
                   onDelete={setDeletingAccount}
+                  isSelected={selectedAccountIds.includes(account.id)}
+                  onToggleSelect={() => handleToggleSelectOne(account.id)}
                 />
               ))}
             </TableBody>

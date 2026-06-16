@@ -13,6 +13,10 @@ import {
   TABLE_PAGE_SIZE,
 } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
+import {
+  dateOnlyToPaidAtIso,
+  normalizeToDateOnly,
+} from "@/shared/helpers/date.helper";
 import { formToAccountPayload, type AccountFormData } from "@/schemas/account.schema";
 import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
@@ -46,6 +50,7 @@ export interface AccountsContextValue {
   createAccount: (data: AccountFormData) => Promise<void>;
   updateAccount: (id: string, data: AccountFormData) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
+  bulkPayAccounts: (ids: string[], paidAt: string) => Promise<void>;
 }
 
 const AccountsContext = createContext<AccountsContextValue | null>(null);
@@ -267,6 +272,44 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
     [accounts, meta, page, fetchAccounts, invalidateRequests]
   );
 
+  const bulkPayAccounts = useCallback(
+    async (ids: string[], paidAt: string) => {
+      if (!ids.length) return;
+
+      const dateOnly = normalizeToDateOnly(paidAt);
+      if (!dateOnly) {
+        throw new Error("Data de pagamento inválida");
+      }
+
+      const paidAtIso = dateOnlyToPaidAtIso(dateOnly);
+
+      setIsSubmitting(true);
+      try {
+        const targetAccounts = accounts.filter((account) =>
+          ids.includes(account.id)
+        );
+
+        await Promise.all(
+          targetAccounts.map((account) =>
+            accountService.update(account.id, {
+              name: account.name,
+              amount: account.amount,
+              dueDate: account.dueDate,
+              status: "PAID",
+              paidAt: paidAtIso,
+            })
+          )
+        );
+
+        invalidateRequests();
+        await fetchAccounts();
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [accounts, fetchAccounts, invalidateRequests]
+  );
+
   const value = useMemo<AccountsContextValue>(
     () => ({
       accounts,
@@ -293,6 +336,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       createAccount,
       updateAccount,
       deleteAccount,
+      bulkPayAccounts,
     }),
     [
       accounts,
@@ -318,6 +362,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       createAccount,
       updateAccount,
       deleteAccount,
+      bulkPayAccounts,
     ]
   );
 

@@ -13,6 +13,10 @@ import {
   TABLE_PAGE_SIZE,
 } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
+import {
+  dateOnlyToPaidAtIso,
+  normalizeToDateOnly,
+} from "@/shared/helpers/date.helper";
 import { fetchAllPaginated } from "@/shared/helpers/fetch-all-paginated.helper";
 import {
   formToEmployeeExamCreatePayloads,
@@ -64,6 +68,7 @@ export interface EmployeeExamsContextValue {
   createLink: (data: EmployeeExamFormData) => Promise<void>;
   updateLink: (id: string, data: EmployeeExamFormData) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;
+  bulkPayLinks: (ids: string[], paidAt: string) => Promise<void>;
 }
 
 const EmployeeExamsContext = createContext<EmployeeExamsContextValue | null>(
@@ -395,6 +400,44 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
     [links, meta, page, fetchLinks, invalidateRequests]
   );
 
+  const bulkPayLinks = useCallback(
+    async (ids: string[], paidAt: string) => {
+      if (!ids.length) return;
+
+      const dateOnly = normalizeToDateOnly(paidAt);
+      if (!dateOnly) {
+        throw new Error("Data de pagamento inválida");
+      }
+
+      const paidAtIso = dateOnlyToPaidAtIso(dateOnly);
+
+      setIsSubmitting(true);
+      try {
+        const targetLinks = links.filter((link) => ids.includes(link.id));
+
+        await Promise.all(
+          targetLinks.map((link) =>
+            employeeExamService.update(link.id, {
+              employee: { id: link.employee.id },
+              professionalName: link.professionalName,
+              examDate: link.examDate,
+              ...(link.examTime ? { examTime: link.examTime } : {}),
+              paymentStatus: "PAID",
+              paidAt: paidAtIso,
+              exam: { id: link.exam.id },
+            })
+          )
+        );
+
+        invalidateRequests();
+        await fetchLinks();
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [links, fetchLinks, invalidateRequests]
+  );
+
   const value = useMemo<EmployeeExamsContextValue>(
     () => ({
       links,
@@ -428,6 +471,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       createLink,
       updateLink,
       deleteLink,
+      bulkPayLinks,
     }),
     [
       links,
@@ -460,6 +504,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       createLink,
       updateLink,
       deleteLink,
+      bulkPayLinks,
     ]
   );
 
