@@ -10,3 +10,4 @@ export type {
   EmployeeExamsReportFilterLookups,
   EmployeeExamsReportListParams,
 } from "@/pdf/employee-exams-report.types";
+export { resolveEmployeeExamsReportExamValueMode } from "@/pdf/employee-exams-report.types";

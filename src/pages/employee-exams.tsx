@@ -49,6 +49,7 @@ import {
   buildEmployeeExamsFilterSummary,
   fetchEmployeeExamsForReport,
   generateEmployeeExamsReportPdf,
+  resolveEmployeeExamsReportExamValueMode,
 } from "@/pdf";
 import type { EmployeeExamFormData } from "@/schemas/employee-exam.schema";
 import {
@@ -479,7 +480,10 @@ export default function EmployeeExamsPage() {
         exams,
       });
 
-      await generateEmployeeExamsReportPdf(reportLinks, { filterSummary });
+      await generateEmployeeExamsReportPdf(reportLinks, {
+        filterSummary,
+        examValueMode: resolveEmployeeExamsReportExamValueMode(exportListParams),
+      });
       toast.success("Relatório PDF gerado com sucesso.");
     } catch (err) {
       toast.error(

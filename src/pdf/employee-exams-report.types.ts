@@ -13,5 +13,14 @@ export interface EmployeeExamsReportFilterLookups {
 
 export interface GenerateEmployeeExamsReportPdfInput {
   filterSummary: string[];
+  examValueMode: EmployeeExamsReportExamValueMode;
   generatedAt?: Date;
+}
+
+export type EmployeeExamsReportExamValueMode = "price" | "cost";
+
+export function resolveEmployeeExamsReportExamValueMode(
+  params: EmployeeExamsReportListParams
+): EmployeeExamsReportExamValueMode {
+  return params.professionalName?.trim() ? "cost" : "price";
 }

@@ -4,7 +4,10 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { PDF_BRAND, PDF_LAYOUT } from "@/pdf/brand-theme";
 import { loadLogoForPdf } from "@/pdf/load-logo-for-pdf";
-import type { GenerateEmployeeExamsReportPdfInput } from "@/pdf/employee-exams-report.types";
+import type {
+  EmployeeExamsReportExamValueMode,
+  GenerateEmployeeExamsReportPdfInput,
+} from "@/pdf/employee-exams-report.types";
 import { formatDateBr } from "@/shared/helpers/date.helper";
 import { formatCurrency } from "@/shared/helpers/format-currency.helper";
 import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
@@ -12,15 +15,33 @@ import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
 const REPORT_TITLE = "Relatório de Vínculos";
 const BRAND_NAME = "ProSaúde";
 
-const TABLE_HEAD = [
+const TABLE_HEAD_BASE = [
   "Data",
   "Hora",
   "Exame",
   "Funcionário",
   "Profissional",
   "Empresa",
-  "Valor exame",
 ] as const;
+
+function getExamValueColumnLabel(mode: EmployeeExamsReportExamValueMode): string {
+  return mode === "cost" ? "Custo exame" : "Valor exame";
+}
+
+function getExamValueTotalLabel(mode: EmployeeExamsReportExamValueMode): string {
+  return mode === "cost" ? "Total custo exames" : "Total dos exames";
+}
+
+function getExamValue(
+  link: IEmployeeExam,
+  mode: EmployeeExamsReportExamValueMode
+): number {
+  return mode === "cost" ? link.exam.cost : link.exam.price;
+}
+
+function buildTableHead(mode: EmployeeExamsReportExamValueMode): string[] {
+  return [...TABLE_HEAD_BASE, getExamValueColumnLabel(mode)];
+}
 
 const COLUMN_WIDTH_RATIOS = [0.09, 0.07, 0.2, 0.17, 0.17, 0.18, 0.12] as const;
 
@@ -58,7 +79,10 @@ function sortLinksByEmployeeName(links: IEmployeeExam[]): IEmployeeExam[] {
   );
 }
 
-function mapLinkToRow(link: IEmployeeExam): string[] {
+function mapLinkToRow(
+  link: IEmployeeExam,
+  examValueMode: EmployeeExamsReportExamValueMode
+): string[] {
   return [
     formatDateBr(link.examDate),
     link.examTime ?? "—",
@@ -66,7 +90,7 @@ function mapLinkToRow(link: IEmployeeExam): string[] {
     link.employee.name,
     link.professionalName,
     link.employee.company.name,
-    formatCurrency(link.exam.price),
+    formatCurrency(getExamValue(link, examValueMode)),
   ];
 }
 
@@ -149,6 +173,7 @@ function drawInfoSection(
   generatedAt: Date,
   totalRecords: number,
   totalValue: number,
+  totalValueLabel: string,
   filterSummary: string[]
 ): number {
   const contentWidth = getContentWidth(doc);
@@ -187,7 +212,7 @@ function drawInfoSection(
     },
     { label: "Registros", value: String(totalRecords), emphasize: false },
     {
-      label: "Total dos exames",
+      label: totalValueLabel,
       value: formatCurrency(totalValue),
       emphasize: true,
     },
@@ -296,8 +321,9 @@ export async function generateEmployeeExamsReportPdf(
   const logo = await loadLogoForPdf();
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const tableWidth = getContentWidth(doc);
+  const examValueMode = options.examValueMode;
   const totalExamValue = sortedLinks.reduce(
-    (sum, link) => sum + link.exam.price,
+    (sum, link) => sum + getExamValue(link, examValueMode),
     0
   );
 
@@ -307,14 +333,15 @@ export async function generateEmployeeExamsReportPdf(
     generatedAt,
     sortedLinks.length,
     totalExamValue,
+    getExamValueTotalLabel(examValueMode),
     options.filterSummary
   );
 
   autoTable(doc, {
     startY: tableStartY,
     tableWidth,
-    head: [TABLE_HEAD as unknown as string[]],
-    body: sortedLinks.map(mapLinkToRow),
+    head: [buildTableHead(examValueMode)],
+    body: sortedLinks.map((link) => mapLinkToRow(link, examValueMode)),
     margin: {
       top: 18,
       left: PDF_LAYOUT.marginX,
