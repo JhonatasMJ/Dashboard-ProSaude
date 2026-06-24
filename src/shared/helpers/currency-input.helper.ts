@@ -1,18 +1,14 @@
 /** Valor máximo permitido para preço de exame (R$). */
-export const MAX_EXAM_PRICE = 200;
+export const MAX_EXAM_PRICE = 2000;
 
-const MAX_PRICE_CENTS = MAX_EXAM_PRICE * 100;
+const MAX_PRICE_CENTS = MAX_EXAM_PRICE * 1000;
 
-/** Extrai só os dígitos do valor exibido (centavos internos). */
+
 export function extractPriceDigits(value: string): string {
   return value.replace(/\D/g, "");
 }
 
-/**
- * Formata dígitos como moeda BRL: cada tecla entra pela direita.
- * "2" → 0,02 · "20" → 0,20 · "200" → 2,00 · "20020" → 200,20
- * Trava em R$ 200,00.
- */
+
 export function formatDigitsToPriceDisplay(
   digits: string,
   maxCents: number = MAX_PRICE_CENTS
