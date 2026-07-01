@@ -11,7 +11,7 @@ import {
   companyToFormValues,
   type CompanyFormData,
 } from "@/schemas/company.schema";
-import { cnpjMask, phoneMask, zipCodeMask } from "@/shared/helpers/input-masks.helper";
+import { cpfCnpjMask, phoneMask, zipCodeMask } from "@/shared/helpers/input-masks.helper";
 import { viacepService } from "@/shared/services/viacep.service";
 import type { ICompany } from "@/shared/interfaces/https/company";
 import { cn } from "@/lib/utils";
@@ -134,9 +134,9 @@ export function CompanyForm({
         <MaskedInputLabel
           control={control}
           name="taxId"
-          label="CNPJ"
-          maskOptions={cnpjMask}
-          placeholder="00.000.000/0000-00"
+          label="CPF ou CNPJ"
+          maskOptions={cpfCnpjMask}
+          placeholder="000.000.000-00 ou 00.000.000/0000-00"
         />
       </FormSection>
 

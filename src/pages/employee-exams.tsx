@@ -483,6 +483,7 @@ export default function EmployeeExamsPage() {
       await generateEmployeeExamsReportPdf(reportLinks, {
         filterSummary,
         examValueMode: resolveEmployeeExamsReportExamValueMode(exportListParams),
+        includeProfessionalColumn: Boolean(exportListParams.professionalName?.trim()),
       });
       toast.success("Relatório PDF gerado com sucesso.");
     } catch (err) {

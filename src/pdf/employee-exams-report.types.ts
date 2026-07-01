@@ -14,6 +14,7 @@ export interface EmployeeExamsReportFilterLookups {
 export interface GenerateEmployeeExamsReportPdfInput {
   filterSummary: string[];
   examValueMode: EmployeeExamsReportExamValueMode;
+  includeProfessionalColumn?: boolean;
   generatedAt?: Date;
 }
 

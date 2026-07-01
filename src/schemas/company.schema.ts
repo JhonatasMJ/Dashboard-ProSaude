@@ -1,12 +1,20 @@
 import * as yup from "yup";
+import {
+  formatTaxId,
+  isValidTaxIdLength,
+} from "@/shared/helpers/input-masks.helper";
 import type { ICompany, ICompanyPayload } from "@/shared/interfaces/https/company";
 
 export const companySchema = yup.object({
   name: yup.string().required("Nome da empresa é obrigatório"),
   taxId: yup
     .string()
-    .required("CNPJ é obrigatório")
-    .min(18, "CNPJ incompleto"),
+    .required("CPF ou CNPJ é obrigatório")
+    .test(
+      "tax-id-length",
+      "Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido",
+      (value) => isValidTaxIdLength(value ?? "")
+    ),
   email: yup
     .string()
     .optional()
@@ -37,7 +45,7 @@ export type CompanyFormData = yup.InferType<typeof companySchema>;
 export function companyToFormValues(company: ICompany): CompanyFormData {
   return {
     name: company.name,
-    taxId: company.taxId,
+    taxId: formatTaxId(company.taxId),
     email: company.email ?? "",
     phone: company.phone,
     zipCode: "",

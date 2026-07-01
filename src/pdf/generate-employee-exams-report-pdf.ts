@@ -39,11 +39,27 @@ function getExamValue(
   return mode === "cost" ? link.exam.cost : link.exam.price;
 }
 
-function buildTableHead(mode: EmployeeExamsReportExamValueMode): string[] {
-  return [...TABLE_HEAD_BASE, getExamValueColumnLabel(mode)];
+function buildTableHead(
+  mode: EmployeeExamsReportExamValueMode,
+  includeProfessionalColumn: boolean
+): string[] {
+  const columns = TABLE_HEAD_BASE.filter(
+    (column) => includeProfessionalColumn || column !== "Profissional"
+  );
+  return [...columns, getExamValueColumnLabel(mode)];
 }
 
-const COLUMN_WIDTH_RATIOS = [0.09, 0.07, 0.2, 0.17, 0.17, 0.18, 0.12] as const;
+function getColumnWidthRatios(includeProfessionalColumn: boolean): number[] {
+  const ratios = includeProfessionalColumn
+    ? [...COLUMN_WIDTH_RATIOS_WITH_PROFESSIONAL]
+    : COLUMN_WIDTH_RATIOS_WITH_PROFESSIONAL.filter((_, index) => index !== 4);
+  const sum = ratios.reduce((total, ratio) => total + ratio, 0);
+  return ratios.map((ratio) => ratio / sum);
+}
+
+const COLUMN_WIDTH_RATIOS_WITH_PROFESSIONAL = [
+  0.09, 0.07, 0.2, 0.17, 0.17, 0.18, 0.12,
+] as const;
 
 const LOGO_DISPLAY = { width: 22, height: 18.6 };
 
@@ -56,14 +72,17 @@ function getContentWidth(doc: jsPDF): number {
   return doc.internal.pageSize.getWidth() - PDF_LAYOUT.marginX * 2;
 }
 
-function getColumnStyles(tableWidth: number) {
+function getColumnStyles(tableWidth: number, includeProfessionalColumn: boolean) {
+  const ratios = getColumnWidthRatios(includeProfessionalColumn);
+  const valueColumnIndex = ratios.length - 1;
+
   return Object.fromEntries(
-    COLUMN_WIDTH_RATIOS.map((ratio, index) => [
+    ratios.map((ratio, index) => [
       index,
       {
         cellWidth: tableWidth * ratio,
         ...(index === 1 ? { halign: "center" as const } : {}),
-        ...(index === 6
+        ...(index === valueColumnIndex
           ? { halign: "right" as const, fontStyle: "bold" as const }
           : {}),
       },
@@ -81,17 +100,36 @@ function sortLinksByEmployeeName(links: IEmployeeExam[]): IEmployeeExam[] {
 
 function mapLinkToRow(
   link: IEmployeeExam,
-  examValueMode: EmployeeExamsReportExamValueMode
+  examValueMode: EmployeeExamsReportExamValueMode,
+  includeProfessionalColumn: boolean
 ): string[] {
-  return [
+  const row = [
     formatDateBr(link.examDate),
     link.examTime ?? "—",
     link.exam.name,
     link.employee.name,
-    link.professionalName,
-    link.employee.company.name,
-    formatCurrency(getExamValue(link, examValueMode)),
   ];
+
+  if (includeProfessionalColumn) {
+    row.push(link.professionalName);
+  }
+
+  row.push(
+    link.employee.company.name,
+    formatCurrency(getExamValue(link, examValueMode))
+  );
+
+  return row;
+}
+
+function buildTableFoot(
+  columnCount: number,
+  totalExamValue: number
+): string[][] {
+  const footRow = Array.from({ length: columnCount }, () => "");
+  footRow[columnCount - 2] = "Total geral";
+  footRow[columnCount - 1] = formatCurrency(totalExamValue);
+  return [footRow];
 }
 
 function setRgb(
@@ -322,6 +360,7 @@ export async function generateEmployeeExamsReportPdf(
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const tableWidth = getContentWidth(doc);
   const examValueMode = options.examValueMode;
+  const includeProfessionalColumn = options.includeProfessionalColumn ?? false;
   const totalExamValue = sortedLinks.reduce(
     (sum, link) => sum + getExamValue(link, examValueMode),
     0
@@ -340,8 +379,10 @@ export async function generateEmployeeExamsReportPdf(
   autoTable(doc, {
     startY: tableStartY,
     tableWidth,
-    head: [buildTableHead(examValueMode)],
-    body: sortedLinks.map((link) => mapLinkToRow(link, examValueMode)),
+    head: [buildTableHead(examValueMode, includeProfessionalColumn)],
+    body: sortedLinks.map((link) =>
+      mapLinkToRow(link, examValueMode, includeProfessionalColumn)
+    ),
     margin: {
       top: 18,
       left: PDF_LAYOUT.marginX,
@@ -368,10 +409,11 @@ export async function generateEmployeeExamsReportPdf(
     alternateRowStyles: {
       fillColor: PDF_BRAND.surface,
     },
-    columnStyles: getColumnStyles(tableWidth),
-    foot: [
-      ["", "", "", "", "", "Total geral", formatCurrency(totalExamValue)],
-    ],
+    columnStyles: getColumnStyles(tableWidth, includeProfessionalColumn),
+    foot: buildTableFoot(
+      buildTableHead(examValueMode, includeProfessionalColumn).length,
+      totalExamValue
+    ),
     footStyles: {
       fillColor: PDF_BRAND.primaryLight,
       textColor: PDF_BRAND.secondary,

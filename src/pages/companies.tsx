@@ -29,7 +29,7 @@ import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
 import { useCrudSheetState } from "@/hooks/use-crud-sheet-state";
 import type { CompanyFormData } from "@/schemas/company.schema";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
-import { formatCnpj } from "@/shared/helpers/input-masks.helper";
+import { formatTaxId } from "@/shared/helpers/input-masks.helper";
 import type { ICompany } from "@/shared/interfaces/https/company";
 
 const COMPANY_FORM_ID = "company-form";
@@ -51,7 +51,7 @@ function CompanyRow({
         <p className="truncate font-medium text-foreground">{company.name}</p>
       </TableCell>
       <TableCell className="hidden font-mono text-sm text-foreground md:table-cell px-5 py-4">
-        {formatCnpj(company.taxId)}
+        {formatTaxId(company.taxId)}
       </TableCell>
       <TableCell className="hidden max-w-[220px] truncate text-sm text-muted-foreground lg:table-cell px-5 py-4">
         {company.email || "—"}
@@ -274,7 +274,7 @@ export default function CompaniesPage() {
               <TableRow className={DATA_TABLE_HEADER_ROW_CLASS}>
                 <TableHead className={DATA_TABLE_HEAD_CLASS}>Empresa</TableHead>
                 <TableHead className={`hidden md:table-cell ${DATA_TABLE_HEAD_CLASS}`}>
-                  CNPJ
+                  CPF / CNPJ
                 </TableHead>
                 <TableHead className={`hidden lg:table-cell ${DATA_TABLE_HEAD_CLASS}`}>
                   E-mail
