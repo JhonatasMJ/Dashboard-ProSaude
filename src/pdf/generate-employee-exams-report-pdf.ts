@@ -17,7 +17,7 @@ const BRAND_NAME = "ProSaúde";
 
 const TABLE_HEAD_BASE = [
   "Data",
-  "Hora",
+  "Status",
   "Exame",
   "Funcionário",
   "Profissional",
@@ -39,6 +39,15 @@ function getExamValue(
   return mode === "cost" ? link.exam.cost : link.exam.price;
 }
 
+function formatPaymentStatusCell(link: IEmployeeExam): string {
+  if (link.paymentStatus === "PAID") {
+    return link.paidAt
+      ? `Pago\n${formatDateBr(link.paidAt)}`
+      : "Pago";
+  }
+  return "Pendente";
+}
+
 function buildTableHead(
   mode: EmployeeExamsReportExamValueMode,
   includeProfessionalColumn: boolean
@@ -58,7 +67,7 @@ function getColumnWidthRatios(includeProfessionalColumn: boolean): number[] {
 }
 
 const COLUMN_WIDTH_RATIOS_WITH_PROFESSIONAL = [
-  0.09, 0.07, 0.2, 0.17, 0.17, 0.18, 0.12,
+  0.09, 0.1, 0.18, 0.17, 0.16, 0.18, 0.12,
 ] as const;
 
 const LOGO_DISPLAY = { width: 22, height: 18.6 };
@@ -105,7 +114,7 @@ function mapLinkToRow(
 ): string[] {
   const row = [
     formatDateBr(link.examDate),
-    link.examTime ?? "—",
+    formatPaymentStatusCell(link),
     link.exam.name,
     link.employee.name,
   ];
