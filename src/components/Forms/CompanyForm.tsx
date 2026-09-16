@@ -130,6 +130,7 @@ export function CompanyForm({
           name="name"
           label="Nome da empresa"
           placeholder="Nome da empresa"
+          compact
         />
         <MaskedInputLabel
           control={control}
@@ -137,6 +138,7 @@ export function CompanyForm({
           label="CPF ou CNPJ"
           maskOptions={cpfCnpjMask}
           placeholder="000.000.000-00 ou 00.000.000/0000-00"
+          compact
         />
       </FormSection>
 
@@ -150,6 +152,7 @@ export function CompanyForm({
           label="E-mail"
           type="email"
           placeholder="contato@empresa.com"
+          compact
         />
         <MaskedInputLabel
           control={control}
@@ -157,6 +160,7 @@ export function CompanyForm({
           label="Telefone"
           maskOptions={phoneMask}
           placeholder="(00) 00000-0000"
+          compact
         />
       </FormSection>
 
@@ -176,6 +180,7 @@ export function CompanyForm({
               void handleFetchAddress();
             }
           }}
+          compact
         />
         <Button
             type="button"
@@ -201,12 +206,14 @@ export function CompanyForm({
             label="Rua"
             placeholder="Rua, avenida..."
             containerClassName="sm:col-span-2"
+            compact
           />
           <InputLabel
             control={control}
             name="number"
             label="Número"
             placeholder="123"
+            compact
           />
         </div>
 
@@ -215,6 +222,7 @@ export function CompanyForm({
           name="neighborhood"
           label="Bairro"
           placeholder="Bairro"
+          compact
         />
 
         <div className="grid gap-4 sm:grid-cols-3">
@@ -224,6 +232,7 @@ export function CompanyForm({
             label="Cidade"
             placeholder="Cidade"
             containerClassName="sm:col-span-2"
+            compact
           />
           <InputLabel
             control={control}
@@ -231,6 +240,7 @@ export function CompanyForm({
             label="UF"
             placeholder="SP"
             maxLength={2}
+            compact
           />
         </div>
       </FormSection>

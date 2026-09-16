@@ -124,6 +124,7 @@ export function EmployeeForm({
                 : "Selecione a empresa"
             }
             disabled={companies.length === 0 || isSubmitting}
+            compact
           />
         )}
 
@@ -132,6 +133,7 @@ export function EmployeeForm({
           name="name"
           label="Nome completo"
           placeholder="Nome do funcionário"
+          compact
         />
 
         <MaskedInputLabel
@@ -140,6 +142,7 @@ export function EmployeeForm({
           label="CPF"
           maskOptions={cpfMask}
           placeholder="000.000.000-00"
+          compact
         />
 
         <InputLabel
@@ -147,6 +150,7 @@ export function EmployeeForm({
           name="jobTitle"
           label="Cargo"
           placeholder="Ex.: Analista administrativo"
+          compact
         />
 
         <div className="space-y-1">
@@ -156,6 +160,7 @@ export function EmployeeForm({
             label="Data de nascimento *"
             maskOptions={birthDateMask}
             placeholder="DD/MM/AAAA"
+            compact
           />
           {ageLabel && (
             <p className="text-xs text-muted-foreground">

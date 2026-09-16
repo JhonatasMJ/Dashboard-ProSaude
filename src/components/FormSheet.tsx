@@ -23,10 +23,18 @@ export interface FormSheetProps {
   children: ReactNode;
   /** Executado ao abrir o sheet (ex.: reset do formulário). */
   onBeforeOpen?: () => void;
+  /** "lg" para formulários com mais campos (ex.: parcelamento). */
+  size?: "default" | "lg";
 }
 
-const SHEET_CONTENT_CLASS =
-  "flex h-full w-full max-w-[min(100vw,560px)] flex-col gap-0 rounded-none border-l bg-background p-0 shadow-xl sm:max-w-[560px]";
+// O Sheet base aplica `data-[side=right]:sm:max-w-sm`, cujo seletor com
+// atributo tem especificidade maior que uma classe comum — por isso o
+// max-w aqui precisa de `!` para de fato vencer e mudar o tamanho do drawer.
+const SHEET_CONTENT_CLASS_BY_SIZE: Record<"default" | "lg", string> = {
+  default:
+    "flex h-full w-full max-w-[min(100vw,560px)]! flex-col gap-0 rounded-none border-l bg-background p-0 shadow-xl sm:max-w-[560px]!",
+  lg: "flex h-full w-full max-w-[min(100vw,680px)]! flex-col gap-0 rounded-none border-l bg-background p-0 shadow-xl sm:max-w-[680px]!",
+};
 
 export function FormSheet({
   open,
@@ -41,6 +49,7 @@ export function FormSheet({
   cancelLabel = "Cancelar",
   children,
   onBeforeOpen,
+  size = "default",
 }: FormSheetProps) {
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen && onBeforeOpen) {
@@ -51,7 +60,11 @@ export function FormSheet({
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" showCloseButton className={SHEET_CONTENT_CLASS}>
+      <SheetContent
+        side="right"
+        showCloseButton
+        className={SHEET_CONTENT_CLASS_BY_SIZE[size]}
+      >
         <SheetHeader className="shrink-0 space-y-1.5 border-b border-border px-6 py-5 text-left">
           <SheetTitle className="text-xl font-semibold tracking-tight">
             {title}

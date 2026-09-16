@@ -17,6 +17,7 @@ import {
 import { DeleteModal } from "@/components/DeleteModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormSheet } from "@/components/FormSheet";
+import { InstallmentsSheet } from "@/components/InstallmentsSheet";
 import { DatePickerLabel } from "@/components/DatePickerLabel";
 import { Button } from "@/components/ui/Button";
 import { FileTextIcon } from "@/components/ui/FileText";
@@ -67,10 +68,15 @@ import { formatCurrency } from "@/shared/helpers/format-currency.helper";
 import { truncateText } from "@/shared/helpers/search-text.helper";
 import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
 import type { PaymentStatus } from "@/shared/types/payment-status.types";
+import {
+  PAYMENT_TYPE_LABELS,
+  type PaymentType,
+} from "@/shared/types/payment-type.types";
 
 const EMPLOYEE_EXAM_FORM_ID = "employee-exam-form";
 const COMPANY_MAX_LENGTH = 22;
 const ALL_PAYMENT_STATUS_FILTER_VALUE = "all";
+const ALL_PAYMENT_TYPE_FILTER_VALUE = "all";
 const ALL_EXAMS_FILTER_VALUE = "all";
 
 function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
@@ -146,6 +152,66 @@ function PaymentStatusFilterSelect({
   );
 }
 
+function PaymentTypeFilterSelect({
+  value,
+  onChange,
+  disabled = false,
+  className,
+  id = "link-payment-type-filter",
+}: {
+  value: PaymentType | "";
+  onChange: (value: PaymentType | "") => void;
+  disabled?: boolean;
+  className?: string;
+  id?: string;
+}) {
+  const items = useMemo(
+    () => [
+      { value: ALL_PAYMENT_TYPE_FILTER_VALUE, label: "Todos os pagamentos" },
+      ...(
+        Object.entries(PAYMENT_TYPE_LABELS) as [PaymentType, string][]
+      ).map(([type, label]) => ({
+        value: type,
+        label,
+      })),
+    ],
+    []
+  );
+
+  const selectValue = value || ALL_PAYMENT_TYPE_FILTER_VALUE;
+
+  return (
+    <div className={cn(FILTER_FIELD_WRAPPER_CLASS, className)}>
+      <Label htmlFor={id} className={FILTER_FIELD_LABEL_CLASS}>
+        Tipo de pagamento
+      </Label>
+      <Select
+        value={selectValue}
+        onValueChange={(next) =>
+          onChange(
+            next === ALL_PAYMENT_TYPE_FILTER_VALUE || !next
+              ? ""
+              : (next as PaymentType)
+          )
+        }
+        items={items}
+        disabled={disabled}
+      >
+        <SelectTrigger id={id} className={FILTER_SELECT_TRIGGER_CLASS}>
+          <SelectValue placeholder="Todos os pagamentos" className="truncate" />
+        </SelectTrigger>
+        <SelectContent align="start">
+          {items.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              <span className="block truncate">{item.label}</span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 function ExamCatalogFilterSelect({
   value,
   onChange,
@@ -198,6 +264,7 @@ function LinkRow({
   rowIndex,
   onEdit,
   onDelete,
+  onViewInstallments,
   isSelected,
   onToggleSelect,
 }: {
@@ -205,9 +272,15 @@ function LinkRow({
   rowIndex: number;
   onEdit: (link: IEmployeeExam) => void;
   onDelete: (link: IEmployeeExam) => void;
+  onViewInstallments: (link: IEmployeeExam) => void;
   isSelected: boolean;
   onToggleSelect: () => void;
 }) {
+  const hasInstallments = link.installments.length > 0;
+  const paidInstallments = link.installments.filter(
+    (installment) => installment.status === "PAID"
+  ).length;
+
   return (
     <TableRow className={getDataTableRowClassName(rowIndex)}>
       <TableCell className={cn(DATA_TABLE_COMPACT_CELL_CLASS, "w-[44px]")}>
@@ -238,6 +311,11 @@ function LinkRow({
         >
           {truncateText(link.employee.company.name, COMPANY_MAX_LENGTH)}
         </p>
+        {hasInstallments && (
+          <p className="text-xs text-muted-foreground">
+            {paidInstallments}/{link.installments.length} parcelas pagas
+          </p>
+        )}
       </TableCell>
       <TableCell
         className={cn(
@@ -284,13 +362,16 @@ function LinkRow({
       >
         {formatCurrency(link.exam.profit)}
       </TableCell>
-      <TableCell className={cn(DATA_TABLE_COMPACT_CELL_CLASS, "w-[88px]")}>
+      <TableCell className={cn(DATA_TABLE_COMPACT_CELL_CLASS, "w-[112px]")}>
         <DataTableRowActions
           size="compact"
           editLabel={`Editar vínculo de ${link.employee.name}`}
           deleteLabel={`Excluir vínculo de ${link.employee.name}`}
           onEdit={() => onEdit(link)}
           onDelete={() => onDelete(link)}
+          showInstallments={hasInstallments}
+          installmentsLabel={`Ver parcelas de ${link.employee.name}`}
+          onViewInstallments={() => onViewInstallments(link)}
         />
       </TableCell>
     </TableRow>
@@ -350,6 +431,7 @@ function EmployeeExamFormSheet({
       isSubmitting={isSubmitting}
       isSubmitDisabled={employees.length === 0}
       submitLabel={isEditing ? "Salvar alterações" : "Cadastrar vínculo(s)"}
+      size="lg"
     >
       <EmployeeExamForm
         key={link?.id ?? "new"}
@@ -389,6 +471,8 @@ export default function EmployeeExamsPage() {
     setExamIdFilter,
     paymentStatusFilter,
     setPaymentStatusFilter,
+    paymentTypeFilter,
+    setPaymentTypeFilter,
     examDateFromFilter,
     setExamDateFromFilter,
     examDateToFilter,
@@ -396,6 +480,7 @@ export default function EmployeeExamsPage() {
     exportListParams,
     setPage,
     bulkPayLinks,
+    updateLinkInstallment,
   } = useEmployeeExams();
 
   const {
@@ -419,6 +504,7 @@ export default function EmployeeExamsPage() {
     employeeIdFilter.length > 0 ||
     examIdFilter.length > 0 ||
     paymentStatusFilter.length > 0 ||
+    paymentTypeFilter.length > 0 ||
     examDateFromFilter.length > 0 ||
     examDateToFilter.length > 0;
   const isEmptyList = !isLoading && !error && links.length === 0;
@@ -427,6 +513,12 @@ export default function EmployeeExamsPage() {
   const [bulkPaidAt, setBulkPaidAt] = useState("");
   const [isBulkPaying, setIsBulkPaying] = useState(false);
   const [isBulkPayModalOpen, setIsBulkPayModalOpen] = useState(false);
+  const [viewingInstallmentsLink, setViewingInstallmentsLink] =
+    useState<IEmployeeExam | null>(null);
+  const liveViewingInstallmentsLink = viewingInstallmentsLink
+    ? (links.find((link) => link.id === viewingInstallmentsLink.id) ??
+      viewingInstallmentsLink)
+    : null;
 
   const visibleIds = links.map((link) => link.id);
   const isAllSelected =
@@ -505,6 +597,26 @@ export default function EmployeeExamsPage() {
     } catch (err) {
       toast.error(
         getApiErrorMessage(err, "Não foi possível excluir o vínculo.")
+      );
+    }
+  };
+
+  const handleMarkInstallmentPaid = async (
+    installmentId: string,
+    paidAtDateOnly: string
+  ) => {
+    if (!viewingInstallmentsLink) return;
+
+    try {
+      await updateLinkInstallment(
+        viewingInstallmentsLink.id,
+        installmentId,
+        paidAtDateOnly
+      );
+      toast.success("Parcela marcada como paga.");
+    } catch (err) {
+      toast.error(
+        getApiErrorMessage(err, "Não foi possível marcar a parcela como paga.")
       );
     }
   };
@@ -629,6 +741,12 @@ export default function EmployeeExamsPage() {
               className={FILTER_GRID_ITEM_CLASS}
               value={paymentStatusFilter}
               onChange={setPaymentStatusFilter}
+              disabled={isLoadingFilters}
+            />
+            <PaymentTypeFilterSelect
+              className={FILTER_GRID_ITEM_CLASS}
+              value={paymentTypeFilter}
+              onChange={setPaymentTypeFilter}
               disabled={isLoadingFilters}
             />
             <CompanyFilterSelect
@@ -756,6 +874,27 @@ export default function EmployeeExamsPage() {
               onOpenChange={handleFormOpenChange}
               link={editingLink}
             />
+            <InstallmentsSheet
+              open={!!viewingInstallmentsLink}
+              onOpenChange={(open) => {
+                if (!open) setViewingInstallmentsLink(null);
+              }}
+              title={
+                liveViewingInstallmentsLink
+                  ? `Parcelas de ${liveViewingInstallmentsLink.employee.name}`
+                  : "Parcelas"
+              }
+              description="Acompanhe e marque cada parcela como paga."
+              installments={liveViewingInstallmentsLink?.installments ?? []}
+              isSubmitting={isSubmitting}
+              statusLabel={(status) => (status === "PAID" ? "Pago" : "Pendente")}
+              statusClassName={(status) =>
+                status === "PAID"
+                  ? "bg-emerald-100 text-emerald-800"
+                  : "bg-amber-100 text-amber-800"
+              }
+              onMarkPaid={handleMarkInstallmentPaid}
+            />
             <DeleteModal
               open={!!deletingLink}
               onOpenChange={(open) => {
@@ -861,6 +1000,7 @@ export default function EmployeeExamsPage() {
                   link={link}
                   onEdit={handleOpenEdit}
                   onDelete={setDeletingLink}
+                  onViewInstallments={setViewingInstallmentsLink}
                   isSelected={selectedLinkIds.includes(link.id)}
                   onToggleSelect={() => handleToggleSelectOne(link.id)}
                 />

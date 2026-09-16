@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { DatePickerLabel } from "@/components/DatePickerLabel";
 import { InputLabel } from "@/components/InputLabel";
+import { InstallmentRowsField } from "@/components/Forms/InstallmentRowsField";
 import { MaskedInputLabel } from "@/components/MaskedInputLabel";
 import { MultiSelectLabel } from "@/components/MultiSelectLabel";
 import { SelectLabel } from "@/components/SelectLabel";
@@ -11,12 +12,16 @@ import { employeeExamSchema } from "@/schemas/employee-exam.schema";
 import { employeeExamToFormValues } from "@/schemas/employee-exam.schema";
 import { dateToDateOnly } from "@/shared/helpers/date.helper";
 import { fetchAllPaginated } from "@/shared/helpers/fetch-all-paginated.helper";
+import { MAX_EXAM_PRICE } from "@/shared/helpers/currency-input.helper";
 import { birthDateMask, examTimeMask } from "@/shared/helpers/input-masks.helper";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IEmployeeExam } from "@/shared/interfaces/https/employee-exam";
 import type { IExam } from "@/shared/interfaces/https/exam";
 import { examService } from "@/shared/services/exam.service";
-import type { EmployeeExamFormData } from "@/schemas/employee-exam.schema";
+import type {
+  EmployeeExamFormData,
+  EmployeeExamPaymentMode,
+} from "@/schemas/employee-exam.schema";
 import { cn } from "@/lib/utils";
 
 interface EmployeeExamFormProps {
@@ -36,13 +41,20 @@ const emptyValues: EmployeeExamFormData = {
   professionalName: "",
   examDate: "",
   examTime: "",
+  paymentMode: "single",
   paymentStatus: "PENDING",
   paidAt: "",
+  installments: [],
 };
 
 const paymentStatusOptions = [
   { value: "PENDING", label: "Pendente" },
   { value: "PAID", label: "Pago" },
+];
+
+const paymentModeOptions: { value: EmployeeExamPaymentMode; label: string }[] = [
+  { value: "single", label: "Pagamento único" },
+  { value: "installments", label: "Parcelado" },
 ];
 
 function FormSection({
@@ -98,9 +110,20 @@ export function EmployeeExamForm({
     });
 
   const employeeIdValue = useWatch({ control, name: "employeeId" });
+  const examIdsValue = useWatch({ control, name: "examIds" });
+  const paymentMode = useWatch({ control, name: "paymentMode" });
   const paymentStatus = useWatch({ control, name: "paymentStatus" });
   const paidAtValue = useWatch({ control, name: "paidAt" });
   const isPaid = paymentStatus === "PAID";
+  const isInstallments = paymentMode === "installments";
+
+  useEffect(() => {
+    if (!isInstallments) return;
+    const currentExamIds = getValues("examIds");
+    if (currentExamIds.length > 1) {
+      setValue("examIds", [currentExamIds[0]], { shouldValidate: true });
+    }
+  }, [isInstallments, getValues, setValue]);
 
   useEffect(() => {
     if (!isPaid) {
@@ -207,6 +230,16 @@ export function EmployeeExamForm({
     ];
   }, [examsForEmployee, defaultValues]);
 
+  const selectedExamForInstallments = useMemo(() => {
+    const examId = examIdsValue?.[0];
+    if (!examId) return undefined;
+
+    return (
+      examsForEmployee.find((exam) => exam.id === examId) ??
+      (defaultValues?.exam.id === examId ? defaultValues.exam : undefined)
+    );
+  }, [examIdsValue, examsForEmployee, defaultValues]);
+
   const canSelectExams =
     !!selectedEmployee ||
     (isEditing && employeeIdValue === defaultValues?.employee.id);
@@ -245,28 +278,44 @@ export function EmployeeExamForm({
               : "Selecione o funcionário"
           }
           disabled={employees.length === 0 || isSubmitting}
+          compact
         />
 
         <MultiSelectLabel
           control={control}
           name="examIds"
-          label={isEditing ? "Exame (catálogo)" : "Exames (catálogo)"}
+          label={isEditing || isInstallments ? "Exame (catálogo)" : "Exames (catálogo)"}
           options={examOptions}
           placeholder={examPlaceholder}
-          maxSelections={isEditing ? 1 : undefined}
+          maxSelections={isEditing || isInstallments ? 1 : undefined}
           disabled={
             !canSelectExams ||
             isLoadingCompanyExams ||
             examOptions.length === 0 ||
             isSubmitting
           }
+          compact
         />
+
+        {!isEditing && (
+          <SelectLabel
+            control={control}
+            name="paymentMode"
+            label="Tipo de pagamento"
+            options={paymentModeOptions}
+            placeholder="Selecione o tipo de pagamento"
+            searchable={false}
+            disabled={isSubmitting}
+            compact
+          />
+        )}
 
         <InputLabel
           control={control}
           name="professionalName"
           label="Profissional responsável"
           placeholder="Nome do profissional"
+          compact
         />
 
         <MaskedInputLabel
@@ -275,6 +324,7 @@ export function EmployeeExamForm({
           label="Data do exame"
           maskOptions={birthDateMask}
           placeholder="DD/MM/AAAA"
+          compact
         />
 
         <MaskedInputLabel
@@ -283,36 +333,75 @@ export function EmployeeExamForm({
           label="Hora do exame (opcional)"
           maskOptions={examTimeMask}
           placeholder="HH:mm"
+          compact
         />
       </FormSection>
 
-      <FormSection
-        title="Pagamento"
-        description="Informe se o vínculo está pendente ou já foi pago."
-      >
-        <SelectLabel
-          control={control}
-          name="paymentStatus"
-          label="Status"
-          options={paymentStatusOptions}
-          placeholder="Selecione o status"
-          disabled={isSubmitting}
-          searchable={false}
-        />
+      {!isInstallments && (
+        <FormSection
+          title="Pagamento"
+          description="Informe se o vínculo está pendente ou já foi pago."
+        >
+          <SelectLabel
+            control={control}
+            name="paymentStatus"
+            label="Status"
+            options={paymentStatusOptions}
+            placeholder="Selecione o status"
+            disabled={isSubmitting}
+            searchable={false}
+            compact
+          />
 
-        {isPaid && (
-          <DatePickerLabel
-            id={`${formId}-paid-at`}
-            label="Data de pagamento"
-            value={paidAtValue ?? ""}
-            onChange={(value) =>
-              setValue("paidAt", value, { shouldValidate: true })
-            }
-            placeholder="Selecione a data"
+          {isPaid && (
+            <DatePickerLabel
+              id={`${formId}-paid-at`}
+              label="Data de pagamento"
+              value={paidAtValue ?? ""}
+              onChange={(value) =>
+                setValue("paidAt", value, { shouldValidate: true })
+              }
+              placeholder="Selecione a data"
+              disabled={isSubmitting}
+              compact
+            />
+          )}
+        </FormSection>
+      )}
+
+      {isInstallments && !isEditing && (
+        <FormSection
+          title="Parcelas"
+          description={
+            selectedExamForInstallments
+              ? `A soma das parcelas deve ser igual ao preço do exame selecionado.`
+              : "Selecione um exame para ver o valor a parcelar."
+          }
+        >
+          <InstallmentRowsField
+            control={control}
+            setValue={setValue}
+            getValues={getValues}
+            maxAmountValue={MAX_EXAM_PRICE}
+            showDueDate={false}
+            totalAmount={selectedExamForInstallments?.price}
             disabled={isSubmitting}
           />
-        )}
-      </FormSection>
+        </FormSection>
+      )}
+
+      {isInstallments && isEditing && (
+        <FormSection
+          title="Parcelas"
+          description="O plano de parcelas foi definido na criação e não pode ser reestruturado aqui."
+        >
+          <p className="text-sm text-muted-foreground">
+            Este vínculo possui {defaultValues?.installments.length ?? 0}{" "}
+            parcela(s). Gerencie o pagamento de cada parcela pelo botão de
+            parcelas na tabela.
+          </p>
+        </FormSection>
+      )}
 
       {!isSheet && onCancel && (
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

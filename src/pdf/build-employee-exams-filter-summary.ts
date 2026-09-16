@@ -1,4 +1,5 @@
 import { dateOnlyToBrDateInput } from "@/shared/helpers/date.helper";
+import { PAYMENT_TYPE_LABELS } from "@/shared/types/payment-type.types";
 import type {
   EmployeeExamsReportFilterLookups,
   EmployeeExamsReportListParams,
@@ -43,6 +44,12 @@ export function buildEmployeeExamsFilterSummary(
     lines.push("Status: Pendente");
   } else if (params.paymentStatus === "PAID") {
     lines.push("Status: Pago");
+  }
+
+  if (params.paymentType) {
+    lines.push(
+      `Tipo de pagamento: ${PAYMENT_TYPE_LABELS[params.paymentType] ?? params.paymentType}`
+    );
   }
 
   if (lines.length === 0) {

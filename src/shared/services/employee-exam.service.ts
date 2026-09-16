@@ -1,6 +1,7 @@
 import { proSaudeApi } from "../api/pro-saude";
 import type {
   IEmployeeExamCreatePayload,
+  IEmployeeExamInstallmentUpdatePayload,
   IEmployeeExamResponse,
   IEmployeeExamsListParams,
   IEmployeeExamsListResponse,
@@ -41,5 +42,17 @@ export const employeeExamService = {
 
   async delete(id: string): Promise<void> {
     await proSaudeApi.delete(`/employee-exams/${id}`);
+  },
+
+  async updateInstallment(
+    linkId: string,
+    installmentId: string,
+    payload: IEmployeeExamInstallmentUpdatePayload
+  ): Promise<IEmployeeExamResponse> {
+    const { data } = await proSaudeApi.put<IEmployeeExamResponse>(
+      `/employee-exams/${linkId}/installments/${installmentId}`,
+      payload
+    );
+    return data;
   },
 };

@@ -1,5 +1,6 @@
 import { proSaudeApi } from "../api/pro-saude";
 import type {
+  IAccountInstallmentUpdatePayload,
   IAccountPayload,
   IAccountResponse,
   IAccountsListParams,
@@ -32,5 +33,17 @@ export const accountService = {
 
   async delete(id: string): Promise<void> {
     await proSaudeApi.delete(`/accounts/${id}`);
+  },
+
+  async updateInstallment(
+    accountId: string,
+    installmentId: string,
+    payload: IAccountInstallmentUpdatePayload
+  ): Promise<IAccountResponse> {
+    const { data } = await proSaudeApi.put<IAccountResponse>(
+      `/accounts/${accountId}/installments/${installmentId}`,
+      payload
+    );
+    return data;
   },
 };

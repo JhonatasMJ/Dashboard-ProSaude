@@ -143,6 +143,7 @@ export function ExamForm({
               : "Selecione a empresa"
           }
           disabled={companies.length === 0 || isSubmitting}
+          compact
         />
 
         {isAllCompaniesSelected && (
@@ -162,6 +163,7 @@ export function ExamForm({
           name="name"
           label="Nome do exame"
           placeholder="Ex.: Audiometria"
+          compact
         />
 
         <CurrencyInputLabel
@@ -170,6 +172,7 @@ export function ExamForm({
           label="Preço (valor cobrado)"
           placeholder="0,00"
           disabled={isSubmitting}
+          compact
         />
 
         <div className="space-y-1">
@@ -179,6 +182,7 @@ export function ExamForm({
             label="Custo (valor pago)"
             placeholder="0,00 (opcional)"
             disabled={isSubmitting}
+            compact
           />
           {profitHint && (
             <p className="text-xs text-muted-foreground">{profitHint}</p>
@@ -190,6 +194,7 @@ export function ExamForm({
           name="notes"
           label="Observações"
           placeholder="Informações adicionais (opcional)"
+          compact
         />
       </FormSection>
 

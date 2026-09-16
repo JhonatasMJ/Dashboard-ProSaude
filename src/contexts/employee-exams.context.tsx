@@ -35,6 +35,7 @@ import { employeeService } from "@/shared/services/employee.service";
 import { examService } from "@/shared/services/exam.service";
 import type { EmployeeExamsReportListParams } from "@/pdf/employee-exams-report.types";
 import type { PaymentStatus } from "@/shared/types/payment-status.types";
+import type { PaymentType } from "@/shared/types/payment-type.types";
 
 export interface EmployeeExamsContextValue {
   links: IEmployeeExam[];
@@ -51,6 +52,7 @@ export interface EmployeeExamsContextValue {
   employeeIdFilter: string;
   examIdFilter: string;
   paymentStatusFilter: PaymentStatus | "";
+  paymentTypeFilter: PaymentType | "";
   examDateFromFilter: string;
   examDateToFilter: string;
   exportListParams: EmployeeExamsReportListParams;
@@ -60,6 +62,7 @@ export interface EmployeeExamsContextValue {
   setEmployeeIdFilter: (value: string) => void;
   setExamIdFilter: (value: string) => void;
   setPaymentStatusFilter: (value: PaymentStatus | "") => void;
+  setPaymentTypeFilter: (value: PaymentType | "") => void;
   setExamDateFromFilter: (value: string) => void;
   setExamDateToFilter: (value: string) => void;
   setPage: (page: number) => void;
@@ -69,6 +72,11 @@ export interface EmployeeExamsContextValue {
   updateLink: (id: string, data: EmployeeExamFormData) => Promise<void>;
   deleteLink: (id: string) => Promise<void>;
   bulkPayLinks: (ids: string[], paidAt: string) => Promise<void>;
+  updateLinkInstallment: (
+    linkId: string,
+    installmentId: string,
+    paidAt: string
+  ) => Promise<void>;
 }
 
 const EmployeeExamsContext = createContext<EmployeeExamsContextValue | null>(
@@ -115,6 +123,9 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<
     PaymentStatus | ""
   >("");
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState<
+    PaymentType | ""
+  >("");
   const [examDateFromFilter, setExamDateFromFilter] = useState("");
   const [examDateToFilter, setExamDateToFilter] = useState("");
 
@@ -152,6 +163,15 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
   const handlePaymentStatusFilterChange = useCallback(
     (value: PaymentStatus | "") => {
       setPaymentStatusFilter(value);
+      setPage(1);
+      setIsLoading(true);
+    },
+    []
+  );
+
+  const handlePaymentTypeFilterChange = useCallback(
+    (value: PaymentType | "") => {
+      setPaymentTypeFilter(value);
       setPage(1);
       setIsLoading(true);
     },
@@ -239,6 +259,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
         : {}),
       ...(examIdFilter ? { examId: examIdFilter } : {}),
       ...(paymentStatusFilter ? { paymentStatus: paymentStatusFilter } : {}),
+      ...(paymentTypeFilter ? { paymentType: paymentTypeFilter } : {}),
       ...(examDateFromFilter ? { examDateFrom: examDateFromFilter } : {}),
       ...(examDateToFilter ? { examDateTo: examDateToFilter } : {}),
     }),
@@ -248,6 +269,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       activeEmployeeIdFilter,
       examIdFilter,
       paymentStatusFilter,
+      paymentTypeFilter,
       examDateFromFilter,
       examDateToFilter,
     ]
@@ -414,9 +436,15 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       setIsSubmitting(true);
       try {
         const targetLinks = links.filter((link) => ids.includes(link.id));
+        const simpleLinks = targetLinks.filter(
+          (link) => link.installments.length === 0
+        );
+        const installmentLinks = targetLinks.filter(
+          (link) => link.installments.length > 0
+        );
 
-        await Promise.all(
-          targetLinks.map((link) =>
+        await Promise.all([
+          ...simpleLinks.map((link) =>
             employeeExamService.update(link.id, {
               employee: { id: link.employee.id },
               professionalName: link.professionalName,
@@ -426,8 +454,19 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
               paidAt: paidAtIso,
               exam: { id: link.exam.id },
             })
-          )
-        );
+          ),
+          ...installmentLinks.flatMap((link) =>
+            link.installments
+              .filter((installment) => installment.status !== "PAID")
+              .map((installment) =>
+                employeeExamService.updateInstallment(
+                  link.id,
+                  installment.id,
+                  { status: "PAID", paidAt: paidAtIso }
+                )
+              )
+          ),
+        ]);
 
         invalidateRequests();
         await fetchLinks();
@@ -436,6 +475,28 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       }
     },
     [links, fetchLinks, invalidateRequests]
+  );
+
+  const updateLinkInstallment = useCallback(
+    async (linkId: string, installmentId: string, paidAt: string) => {
+      const dateOnly = normalizeToDateOnly(paidAt);
+      if (!dateOnly) {
+        throw new Error("Data de pagamento inválida");
+      }
+
+      setIsSubmitting(true);
+      try {
+        await employeeExamService.updateInstallment(linkId, installmentId, {
+          status: "PAID",
+          paidAt: dateOnlyToPaidAtIso(dateOnly),
+        });
+        invalidateRequests();
+        await fetchLinks();
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [fetchLinks, invalidateRequests]
   );
 
   const value = useMemo<EmployeeExamsContextValue>(
@@ -454,6 +515,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       employeeIdFilter,
       examIdFilter,
       paymentStatusFilter,
+      paymentTypeFilter,
       examDateFromFilter,
       examDateToFilter,
       exportListParams,
@@ -463,6 +525,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       setEmployeeIdFilter: handleEmployeeFilterChange,
       setExamIdFilter: handleExamFilterChange,
       setPaymentStatusFilter: handlePaymentStatusFilterChange,
+      setPaymentTypeFilter: handlePaymentTypeFilterChange,
       setExamDateFromFilter: handleExamDateFromChange,
       setExamDateToFilter: handleExamDateToChange,
       setPage: handlePageChange,
@@ -472,6 +535,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       updateLink,
       deleteLink,
       bulkPayLinks,
+      updateLinkInstallment,
     }),
     [
       links,
@@ -488,6 +552,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       employeeIdFilter,
       examIdFilter,
       paymentStatusFilter,
+      paymentTypeFilter,
       examDateFromFilter,
       examDateToFilter,
       exportListParams,
@@ -496,6 +561,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       handleEmployeeFilterChange,
       handleExamFilterChange,
       handlePaymentStatusFilterChange,
+      handlePaymentTypeFilterChange,
       handleExamDateFromChange,
       handleExamDateToChange,
       handlePageChange,
@@ -505,6 +571,7 @@ export function EmployeeExamsProvider({ children }: { children: ReactNode }) {
       updateLink,
       deleteLink,
       bulkPayLinks,
+      updateLinkInstallment,
     ]
   );
 

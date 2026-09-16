@@ -10,6 +10,10 @@ import {
   type MultiSelectOption,
 } from "@/components/MultiSelect";
 import { Label } from "@/components/ui/Label";
+import {
+  FILTER_FIELD_LABEL_CLASS,
+  FILTER_SEARCHABLE_SELECT_CLASS,
+} from "@/shared/constants/filter-field.constants";
 import { cn } from "@/lib/utils";
 
 type MultiSelectLabelProps<T extends FieldValues> = {
@@ -21,6 +25,8 @@ type MultiSelectLabelProps<T extends FieldValues> = {
   maxSelections?: number;
   containerClassName?: string;
   disabled?: boolean;
+  /** Usa o mesmo tamanho compacto dos campos de filtro. */
+  compact?: boolean;
 };
 
 export function MultiSelectLabel<T extends FieldValues>({
@@ -32,6 +38,7 @@ export function MultiSelectLabel<T extends FieldValues>({
   maxSelections,
   containerClassName,
   disabled = false,
+  compact = false,
 }: MultiSelectLabelProps<T>) {
   const fieldId = String(name);
 
@@ -49,8 +56,17 @@ export function MultiSelectLabel<T extends FieldValues>({
       name={name}
       control={control}
       render={({ field, fieldState }) => (
-        <div className={cn("flex w-full flex-col gap-2.5", containerClassName)}>
-          <Label htmlFor={fieldId} className="text-sm">
+        <div
+          className={cn(
+            "flex w-full flex-col",
+            compact ? "gap-1.5" : "gap-2.5",
+            containerClassName
+          )}
+        >
+          <Label
+            htmlFor={fieldId}
+            className={compact ? FILTER_FIELD_LABEL_CLASS : "text-sm"}
+          >
             {label}
           </Label>
           <MultiSelect
@@ -62,6 +78,7 @@ export function MultiSelectLabel<T extends FieldValues>({
             maxSelections={maxSelections}
             disabled={disabled}
             aria-invalid={!!fieldState.error}
+            className={cn(compact && FILTER_SEARCHABLE_SELECT_CLASS)}
           />
           {fieldState.error?.message && (
             <p className="text-sm text-destructive">

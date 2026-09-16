@@ -3,6 +3,10 @@ import {
   ACCOUNT_STATUS_LABELS,
   type AccountStatus,
 } from "@/shared/types/account-status.types";
+import {
+  PAYMENT_TYPE_LABELS,
+  type PaymentType,
+} from "@/shared/types/payment-type.types";
 import type { AccountsReportListParams } from "@/pdf/accounts-report.types";
 
 export function buildAccountsFilterSummary(
@@ -17,6 +21,12 @@ export function buildAccountsFilterSummary(
   if (params.status) {
     lines.push(
       `Status: ${ACCOUNT_STATUS_LABELS[params.status as AccountStatus] ?? params.status}`
+    );
+  }
+
+  if (params.paymentType) {
+    lines.push(
+      `Tipo de pagamento: ${PAYMENT_TYPE_LABELS[params.paymentType as PaymentType] ?? params.paymentType}`
     );
   }
 

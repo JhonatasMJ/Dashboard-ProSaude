@@ -239,6 +239,7 @@ export function AsoForm({
               : "Selecione o funcionário"
           }
           disabled={employees.length === 0 || isSubmitting}
+          compact
         />
 
         <SelectLabel
@@ -249,6 +250,7 @@ export function AsoForm({
           placeholder="Selecione o tipo"
           searchable={false}
           disabled={isSubmitting}
+          compact
         />
 
         <MaskedInputLabel
@@ -257,6 +259,7 @@ export function AsoForm({
           label="Data do ASO"
           maskOptions={birthDateMask}
           placeholder="DD/MM/AAAA"
+          compact
         />
       </FormSection>
 
@@ -276,6 +279,7 @@ export function AsoForm({
             examOptions.length === 0 ||
             isSubmitting
           }
+          compact
         />
 
         <MultiSelectLabel
@@ -289,6 +293,7 @@ export function AsoForm({
               : "Selecione os riscos"
           }
           disabled={occupationalRisks.length === 0 || isSubmitting}
+          compact
         />
       </FormSection>
 

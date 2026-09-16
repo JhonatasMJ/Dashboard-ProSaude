@@ -16,6 +16,7 @@ import {
 import { DeleteModal } from "@/components/DeleteModal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormSheet } from "@/components/FormSheet";
+import { InstallmentsSheet } from "@/components/InstallmentsSheet";
 import { Button } from "@/components/ui/Button";
 import { FileTextIcon } from "@/components/ui/FileText";
 import { PlusIcon } from "@/components/ui/Plus";
@@ -64,9 +65,14 @@ import {
   ACCOUNT_STATUS_LABELS,
   type AccountStatus,
 } from "@/shared/types/account-status.types";
+import {
+  PAYMENT_TYPE_LABELS,
+  type PaymentType,
+} from "@/shared/types/payment-type.types";
 
 const ACCOUNT_FORM_ID = "account-form";
 const ALL_ACCOUNT_STATUS_FILTER_VALUE = "all";
+const ALL_PAYMENT_TYPE_FILTER_VALUE = "all";
 
 const STATUS_STYLES: Record<AccountStatus, string> = {
   PENDING: "bg-amber-100 text-amber-800",
@@ -147,11 +153,72 @@ function AccountStatusFilterSelect({
   );
 }
 
+function PaymentTypeFilterSelect({
+  value,
+  onChange,
+  disabled = false,
+  className,
+  id = "account-payment-type-filter",
+}: {
+  value: PaymentType | "";
+  onChange: (value: PaymentType | "") => void;
+  disabled?: boolean;
+  className?: string;
+  id?: string;
+}) {
+  const items = useMemo(
+    () => [
+      { value: ALL_PAYMENT_TYPE_FILTER_VALUE, label: "Todos os pagamentos" },
+      ...(
+        Object.entries(PAYMENT_TYPE_LABELS) as [PaymentType, string][]
+      ).map(([type, label]) => ({
+        value: type,
+        label,
+      })),
+    ],
+    []
+  );
+
+  const selectValue = value || ALL_PAYMENT_TYPE_FILTER_VALUE;
+
+  return (
+    <div className={cn(FILTER_FIELD_WRAPPER_CLASS, className)}>
+      <Label htmlFor={id} className={FILTER_FIELD_LABEL_CLASS}>
+        Tipo de pagamento
+      </Label>
+      <Select
+        value={selectValue}
+        onValueChange={(next) =>
+          onChange(
+            next === ALL_PAYMENT_TYPE_FILTER_VALUE || !next
+              ? ""
+              : (next as PaymentType)
+          )
+        }
+        items={items}
+        disabled={disabled}
+      >
+        <SelectTrigger id={id} className={FILTER_SELECT_TRIGGER_CLASS}>
+          <SelectValue placeholder="Todos os pagamentos" className="truncate" />
+        </SelectTrigger>
+        <SelectContent align="start">
+          {items.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              <span className="block truncate">{item.label}</span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 function AccountRow({
   account,
   rowIndex,
   onEdit,
   onDelete,
+  onViewInstallments,
   isSelected,
   onToggleSelect,
 }: {
@@ -159,9 +226,15 @@ function AccountRow({
   rowIndex: number;
   onEdit: (account: IAccount) => void;
   onDelete: (account: IAccount) => void;
+  onViewInstallments: (account: IAccount) => void;
   isSelected: boolean;
   onToggleSelect: () => void;
 }) {
+  const hasInstallments = account.installments.length > 0;
+  const paidInstallments = account.installments.filter(
+    (installment) => installment.status === "PAID"
+  ).length;
+
   return (
     <TableRow className={getDataTableRowClassName(rowIndex)}>
       <TableCell className={DATA_TABLE_CELL_CLASS}>
@@ -179,6 +252,11 @@ function AccountRow({
       </TableCell>
       <TableCell className={cn(DATA_TABLE_CELL_CLASS, "text-sm font-medium text-foreground")}>
         {formatCurrency(account.amount)}
+        {hasInstallments && (
+          <p className="text-xs font-normal text-muted-foreground">
+            {paidInstallments}/{account.installments.length} parcelas pagas
+          </p>
+        )}
       </TableCell>
       <TableCell className={cn(DATA_TABLE_CELL_CLASS, "hidden whitespace-nowrap text-sm text-muted-foreground md:table-cell")}>
         {formatDateBr(account.dueDate)}
@@ -186,13 +264,16 @@ function AccountRow({
       <TableCell className={cn(DATA_TABLE_CELL_CLASS, "hidden whitespace-nowrap text-sm text-muted-foreground lg:table-cell")}>
         {account.paidAt ? formatDateBr(account.paidAt) : "—"}
       </TableCell>
-      <TableCell className={cn(DATA_TABLE_CELL_CLASS, "w-[88px]")}>
+      <TableCell className={cn(DATA_TABLE_CELL_CLASS, "w-[112px]")}>
         <DataTableRowActions
           size="compact"
           editLabel={`Editar ${account.name}`}
           deleteLabel={`Excluir ${account.name}`}
           onEdit={() => onEdit(account)}
           onDelete={() => onDelete(account)}
+          showInstallments={hasInstallments}
+          installmentsLabel={`Ver parcelas de ${account.name}`}
+          onViewInstallments={() => onViewInstallments(account)}
         />
       </TableCell>
     </TableRow>
@@ -246,6 +327,7 @@ function AccountFormSheet({
       formId={ACCOUNT_FORM_ID}
       isSubmitting={isSubmitting}
       submitLabel={isEditing ? "Salvar alterações" : "Cadastrar conta"}
+      size="lg"
     >
       <AccountForm
         key={account?.id ?? "new"}
@@ -273,6 +355,8 @@ export default function AccountsPage() {
     setNameFilter,
     statusFilter,
     setStatusFilter,
+    paymentTypeFilter,
+    setPaymentTypeFilter,
     dueDateFromFilter,
     setDueDateFromFilter,
     dueDateToFilter,
@@ -284,6 +368,7 @@ export default function AccountsPage() {
     exportListParams,
     setPage,
     bulkPayAccounts,
+    updateAccountInstallment,
   } = useAccounts();
   const {
     formOpen,
@@ -303,11 +388,18 @@ export default function AccountsPage() {
   const [bulkPaidAt, setBulkPaidAt] = useState("");
   const [isBulkPaying, setIsBulkPaying] = useState(false);
   const [isBulkPayModalOpen, setIsBulkPayModalOpen] = useState(false);
+  const [viewingInstallmentsAccount, setViewingInstallmentsAccount] =
+    useState<IAccount | null>(null);
+  const liveViewingInstallmentsAccount = viewingInstallmentsAccount
+    ? (accounts.find((account) => account.id === viewingInstallmentsAccount.id) ??
+      viewingInstallmentsAccount)
+    : null;
 
   const totalCount = meta?.total ?? 0;
   const hasActiveFilters =
     nameFilter.trim().length > 0 ||
     statusFilter.length > 0 ||
+    paymentTypeFilter.length > 0 ||
     dueDateFromFilter.length > 0 ||
     dueDateToFilter.length > 0 ||
     paidAtFromFilter.length > 0 ||
@@ -371,6 +463,26 @@ export default function AccountsPage() {
     } catch (err) {
       toast.error(
         getApiErrorMessage(err, "Não foi possível excluir a conta.")
+      );
+    }
+  };
+
+  const handleMarkInstallmentPaid = async (
+    installmentId: string,
+    paidAtDateOnly: string
+  ) => {
+    if (!viewingInstallmentsAccount) return;
+
+    try {
+      await updateAccountInstallment(
+        viewingInstallmentsAccount.id,
+        installmentId,
+        paidAtDateOnly
+      );
+      toast.success("Parcela marcada como paga.");
+    } catch (err) {
+      toast.error(
+        getApiErrorMessage(err, "Não foi possível marcar a parcela como paga.")
       );
     }
   };
@@ -488,6 +600,11 @@ export default function AccountsPage() {
               value={statusFilter}
               onChange={setStatusFilter}
             />
+            <PaymentTypeFilterSelect
+              className={FILTER_GRID_ITEM_CLASS}
+              value={paymentTypeFilter}
+              onChange={setPaymentTypeFilter}
+            />
             <DatePickerLabel
               className={FILTER_GRID_ITEM_CLASS}
               id="account-due-date-from"
@@ -587,6 +704,27 @@ export default function AccountsPage() {
               onOpenChange={handleFormOpenChange}
               account={editingAccount}
             />
+            <InstallmentsSheet
+              open={!!viewingInstallmentsAccount}
+              onOpenChange={(open) => {
+                if (!open) setViewingInstallmentsAccount(null);
+              }}
+              title={
+                liveViewingInstallmentsAccount
+                  ? `Parcelas de ${liveViewingInstallmentsAccount.name}`
+                  : "Parcelas"
+              }
+              description="Acompanhe e marque cada parcela como paga."
+              installments={liveViewingInstallmentsAccount?.installments ?? []}
+              isSubmitting={isSubmitting}
+              statusLabel={(status) =>
+                ACCOUNT_STATUS_LABELS[status as AccountStatus] ?? status
+              }
+              statusClassName={(status) =>
+                STATUS_STYLES[status as AccountStatus] ?? ""
+              }
+              onMarkPaid={handleMarkInstallmentPaid}
+            />
             <DeleteModal
               open={!!deletingAccount}
               onOpenChange={(open) => {
@@ -639,6 +777,7 @@ export default function AccountsPage() {
                   account={account}
                   onEdit={openEdit}
                   onDelete={setDeletingAccount}
+                  onViewInstallments={setViewingInstallmentsAccount}
                   isSelected={selectedAccountIds.includes(account.id)}
                   onToggleSelect={() => handleToggleSelectOne(account.id)}
                 />

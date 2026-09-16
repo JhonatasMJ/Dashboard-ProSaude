@@ -40,12 +40,17 @@ function getExamValue(
 }
 
 function formatPaymentStatusCell(link: IEmployeeExam): string {
+  const hasInstallments = link.installments.length > 0;
+  const installmentSuffix = hasInstallments
+    ? `\nParcelado (${link.installments.filter((installment) => installment.status === "PAID").length}/${link.installments.length})`
+    : "";
+
   if (link.paymentStatus === "PAID") {
-    return link.paidAt
-      ? `Pago\n${formatDateBr(link.paidAt)}`
-      : "Pago";
+    const base = link.paidAt ? `Pago\n${formatDateBr(link.paidAt)}` : "Pago";
+    return `${base}${installmentSuffix}`;
   }
-  return "Pendente";
+
+  return `Pendente${installmentSuffix}`;
 }
 
 function buildTableHead(

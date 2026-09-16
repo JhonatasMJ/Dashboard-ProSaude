@@ -99,6 +99,7 @@ export function OccupationalRiskForm({
           placeholder="Selecione a categoria"
           searchable={false}
           disabled={isSubmitting}
+          compact
         />
 
         <InputLabel
@@ -107,6 +108,7 @@ export function OccupationalRiskForm({
           label="Descrição"
           placeholder="Ex.: Ruído contínuo acima de 85 dB..."
           disabled={isSubmitting}
+          compact
         />
       </FormSection>
 

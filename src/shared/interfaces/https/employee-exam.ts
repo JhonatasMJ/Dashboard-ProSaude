@@ -1,5 +1,6 @@
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import type { PaymentStatus } from "@/shared/types/payment-status.types";
+import type { PaymentType } from "@/shared/types/payment-type.types";
 
 export interface IEmployeeExamCompanyRef {
   id: string;
@@ -20,6 +21,14 @@ export interface IEmployeeExamExamRef {
   profit: number;
 }
 
+export interface IEmployeeExamInstallment {
+  id: string;
+  number: number;
+  amount: number;
+  paidAt: string | null;
+  status: PaymentStatus;
+}
+
 export interface IEmployeeExam {
   id: string;
   professionalName: string;
@@ -27,6 +36,7 @@ export interface IEmployeeExam {
   examTime: string | null;
   paymentStatus: PaymentStatus;
   paidAt: string | null;
+  installments: IEmployeeExamInstallment[];
   employee: IEmployeeExamEmployeeRef;
   exam: IEmployeeExamExamRef;
   createdAt: string;
@@ -39,6 +49,7 @@ export interface IEmployeeExamsListParams {
   examId?: string;
   companyId?: string;
   paymentStatus?: PaymentStatus;
+  paymentType?: PaymentType;
   examDateFrom?: string;
   examDateTo?: string;
   paidAtFrom?: string;
@@ -56,14 +67,20 @@ export interface IEmployeeExamResponse {
   data: IEmployeeExam;
 }
 
+export interface IEmployeeExamInstallmentInput {
+  amount: number;
+  paidAt?: string | null;
+}
+
 export interface IEmployeeExamCreatePayload {
   employee: { id: string };
   exam: { id: string };
   professionalName: string;
   examDate: string;
   examTime?: string | null;
-  paymentStatus: PaymentStatus;
+  paymentStatus?: PaymentStatus;
   paidAt?: string | null;
+  installments?: IEmployeeExamInstallmentInput[];
 }
 
 export interface IEmployeeExamUpdatePayload {
@@ -74,4 +91,10 @@ export interface IEmployeeExamUpdatePayload {
   examTime?: string | null;
   paymentStatus?: PaymentStatus;
   paidAt?: string | null;
+}
+
+export interface IEmployeeExamInstallmentUpdatePayload {
+  amount?: number;
+  paidAt?: string | null;
+  status?: PaymentStatus;
 }

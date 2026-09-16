@@ -5,6 +5,7 @@ import { ClipboardCheckIcon } from "@/components/ui/ClipboardCheck";
 import { DeleteIcon } from "@/components/ui/Delete";
 import { FileTextIcon } from "@/components/ui/FileText";
 import { SquarePenIcon } from "@/components/ui/SquarePen";
+import { WalletIcon } from "@/components/ui/Wallet";
 import { TableActionTooltip } from "@/components/data-table/TableActionTooltip";
 import { useButtonAnimatedIcon } from "@/hooks/use-button-animated-icon";
 import { cn } from "@/lib/utils";
@@ -19,10 +20,13 @@ interface DataTableRowActionsProps {
   isDownloading?: boolean;
   fichaDownloadLabel?: string;
   onDownloadFicha?: () => void;
+  installmentsLabel?: string;
+  onViewInstallments?: () => void;
   showEdit?: boolean;
   showDelete?: boolean;
   showDownload?: boolean;
   showDownloadFicha?: boolean;
+  showInstallments?: boolean;
   size?: "default" | "compact";
   className?: string;
 }
@@ -37,10 +41,13 @@ export function DataTableRowActions({
   isDownloading = false,
   fichaDownloadLabel = "Baixar ficha",
   onDownloadFicha,
+  installmentsLabel = "Ver parcelas",
+  onViewInstallments,
   showEdit = true,
   showDelete = true,
   showDownload = false,
   showDownloadFicha = false,
+  showInstallments = false,
   size = "default",
   className,
 }: DataTableRowActionsProps) {
@@ -48,6 +55,7 @@ export function DataTableRowActions({
   const deleteIcon = useButtonAnimatedIcon();
   const downloadIcon = useButtonAnimatedIcon();
   const fichaIcon = useButtonAnimatedIcon();
+  const installmentsIcon = useButtonAnimatedIcon();
   const iconSize = size === "compact" ? 14 : 16;
   const buttonSize = size === "compact" ? "size-8" : "icon-lg";
 
@@ -128,6 +136,30 @@ export function DataTableRowActions({
               iconRef={fichaIcon.iconRef}
               size={iconSize}
               className="text-emerald-700"
+            />
+          </Button>
+        )}
+      {showInstallments &&
+        onViewInstallments &&
+        wrap(
+          "Ver parcelas",
+          false,
+          <Button
+            variant="ghost"
+            size={size === "compact" ? "icon" : "icon-lg"}
+            className={cn(
+              "rounded-md bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 hover:text-amber-800",
+              buttonSize
+            )}
+            aria-label={installmentsLabel}
+            onClick={onViewInstallments}
+            {...installmentsIcon.rowHandlers}
+          >
+            <ButtonAnimatedIcon
+              icon={WalletIcon}
+              iconRef={installmentsIcon.iconRef}
+              size={iconSize}
+              className="text-amber-700"
             />
           </Button>
         )}

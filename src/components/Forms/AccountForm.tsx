@@ -4,6 +4,7 @@ import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { CurrencyInputLabel } from "@/components/CurrencyInputLabel";
 import { DatePickerLabel } from "@/components/DatePickerLabel";
 import { InputLabel } from "@/components/InputLabel";
+import { InstallmentRowsField } from "@/components/Forms/InstallmentRowsField";
 import { SelectLabel } from "@/components/SelectLabel";
 import { Button } from "@/components/ui/Button";
 import { accountSchema } from "@/schemas/account.schema";
@@ -15,8 +16,13 @@ import {
   ACCOUNT_STATUS_LABELS,
   type AccountStatus,
 } from "@/shared/types/account-status.types";
-import type { AccountFormData } from "@/schemas/account.schema";
+import type { AccountFormData, AccountPaymentMode } from "@/schemas/account.schema";
 import { cn } from "@/lib/utils";
+
+const paymentModeOptions: { value: AccountPaymentMode; label: string }[] = [
+  { value: "single", label: "Pagamento único" },
+  { value: "installments", label: "Parcelado" },
+];
 
 interface AccountFormProps {
   defaultValues?: IAccount;
@@ -30,10 +36,12 @@ interface AccountFormProps {
 
 const emptyValues: AccountFormData = {
   name: "",
+  paymentMode: "single",
   amount: "",
   dueDate: "",
   status: "PENDING",
   paidAt: "",
+  installments: [],
 };
 
 function FormSection({
@@ -81,15 +89,18 @@ export function AccountForm({
     control,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<AccountFormData>({
     resolver: yupResolver(accountSchema) as Resolver<AccountFormData>,
     defaultValues: defaultValues ? accountToFormValues(defaultValues) : emptyValues,
   });
 
+  const paymentMode = useWatch({ control, name: "paymentMode" });
   const status = useWatch({ control, name: "status" });
   const dueDate = useWatch({ control, name: "dueDate" });
   const paidAt = useWatch({ control, name: "paidAt" });
+  const isInstallments = paymentMode === "installments";
   const isPaid = status === "PAID";
 
   useEffect(() => {
@@ -121,65 +132,106 @@ export function AccountForm({
           name="name"
           label="Nome"
           placeholder="Ex.: Aluguel, Energia..."
+          compact
         />
-
-        <CurrencyInputLabel
-          control={control}
-          name="amount"
-          label="Valor"
-          placeholder="0,00"
-          maxValue={MAX_ACCOUNT_VALUE}
-          disabled={isSubmitting}
-        />
-
-        <div className="flex flex-col gap-2.5">
-          <DatePickerLabel
-            id="account-due-date"
-            label="Data de vencimento"
-            value={dueDate ?? ""}
-            onChange={(value) =>
-              setValue("dueDate", value, { shouldValidate: true })
-            }
-            placeholder="Selecione a data de vencimento"
-            disabled={isSubmitting}
-          />
-          {errors.dueDate?.message && (
-            <p className="text-sm text-destructive">
-              {errors.dueDate.message}
-            </p>
-          )}
-        </div>
 
         <SelectLabel
           control={control}
-          name="status"
-          label="Status"
-          options={statusOptions}
-          placeholder="Selecione o status"
+          name="paymentMode"
+          label="Tipo de pagamento"
+          options={paymentModeOptions}
+          placeholder="Selecione o tipo de pagamento"
           searchable={false}
           disabled={isSubmitting}
+          compact
         />
 
-        {isPaid && (
-          <div className="flex flex-col gap-2.5">
-            <DatePickerLabel
-              id="account-paid-at"
-              label="Data de pagamento"
-              value={paidAt ?? ""}
-              onChange={(value) =>
-                setValue("paidAt", value, { shouldValidate: true })
-              }
-              placeholder="Selecione a data de pagamento"
+        {!isInstallments && (
+          <>
+            <CurrencyInputLabel
+              control={control}
+              name="amount"
+              label="Valor"
+              placeholder="0,00"
+              maxValue={MAX_ACCOUNT_VALUE}
               disabled={isSubmitting}
+              compact
             />
-            {errors.paidAt?.message && (
-              <p className="text-sm text-destructive">
-                {errors.paidAt.message}
-              </p>
+
+            <div className="flex flex-col gap-1.5">
+              <DatePickerLabel
+                id="account-due-date"
+                label="Data de vencimento"
+                value={dueDate ?? ""}
+                onChange={(value) =>
+                  setValue("dueDate", value, { shouldValidate: true })
+                }
+                placeholder="Selecione a data de vencimento"
+                disabled={isSubmitting}
+                compact
+              />
+              {errors.dueDate?.message && (
+                <p className="text-sm text-destructive">
+                  {errors.dueDate.message}
+                </p>
+              )}
+            </div>
+
+            <SelectLabel
+              control={control}
+              name="status"
+              label="Status"
+              options={statusOptions}
+              placeholder="Selecione o status"
+              searchable={false}
+              disabled={isSubmitting}
+              compact
+            />
+
+            {isPaid && (
+              <div className="flex flex-col gap-1.5">
+                <DatePickerLabel
+                  id="account-paid-at"
+                  label="Data de pagamento"
+                  value={paidAt ?? ""}
+                  onChange={(value) =>
+                    setValue("paidAt", value, { shouldValidate: true })
+                  }
+                  placeholder="Selecione a data de pagamento"
+                  disabled={isSubmitting}
+                  compact
+                />
+                {errors.paidAt?.message && (
+                  <p className="text-sm text-destructive">
+                    {errors.paidAt.message}
+                  </p>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </FormSection>
+
+      {isInstallments && (
+        <FormSection
+          title="Parcelas"
+          description="Informe o valor e o vencimento de cada parcela (mínimo 2)."
+        >
+          <InstallmentRowsField
+            control={control}
+            setValue={setValue}
+            getValues={getValues}
+            maxAmountValue={MAX_ACCOUNT_VALUE}
+            showDueDate
+            disabled={isSubmitting}
+          />
+          {errors.installments?.message && (
+            <p className="text-sm text-destructive">
+              {errors.installments.message}
+            </p>
+          )}
+        </FormSection>
+      )}
 
       {!isSheet && onCancel && (
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

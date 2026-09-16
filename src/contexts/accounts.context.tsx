@@ -13,15 +13,13 @@ import {
   TABLE_PAGE_SIZE,
 } from "@/shared/constants/app.constants";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
-import {
-  dateOnlyToPaidAtIso,
-  normalizeToDateOnly,
-} from "@/shared/helpers/date.helper";
+import { normalizeToDateOnly } from "@/shared/helpers/date.helper";
 import { formToAccountPayload, type AccountFormData } from "@/schemas/account.schema";
 import { removeItemFromPaginatedList } from "@/shared/helpers/paginated-list.helper";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import type { IAccount } from "@/shared/interfaces/https/account";
 import type { AccountStatus } from "@/shared/types/account-status.types";
+import type { PaymentType } from "@/shared/types/payment-type.types";
 import { accountService } from "@/shared/services/account.service";
 import type { AccountsReportListParams } from "@/pdf/accounts-report.types";
 
@@ -33,6 +31,7 @@ export interface AccountsContextValue {
   error: string | null;
   nameFilter: string;
   statusFilter: AccountStatus | "";
+  paymentTypeFilter: PaymentType | "";
   dueDateFromFilter: string;
   dueDateToFilter: string;
   paidAtFromFilter: string;
@@ -41,6 +40,7 @@ export interface AccountsContextValue {
   page: number;
   setNameFilter: (value: string) => void;
   setStatusFilter: (value: AccountStatus | "") => void;
+  setPaymentTypeFilter: (value: PaymentType | "") => void;
   setDueDateFromFilter: (value: string) => void;
   setDueDateToFilter: (value: string) => void;
   setPaidAtFromFilter: (value: string) => void;
@@ -51,6 +51,11 @@ export interface AccountsContextValue {
   updateAccount: (id: string, data: AccountFormData) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
   bulkPayAccounts: (ids: string[], paidAt: string) => Promise<void>;
+  updateAccountInstallment: (
+    accountId: string,
+    installmentId: string,
+    paidAt: string
+  ) => Promise<void>;
 }
 
 const AccountsContext = createContext<AccountsContextValue | null>(null);
@@ -67,6 +72,9 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
   const [nameFilter, setNameFilter] = useState("");
   const [debouncedName, setDebouncedName] = useState("");
   const [statusFilter, setStatusFilter] = useState<AccountStatus | "">("");
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState<PaymentType | "">(
+    ""
+  );
   const [dueDateFromFilter, setDueDateFromFilter] = useState("");
   const [dueDateToFilter, setDueDateToFilter] = useState("");
   const [paidAtFromFilter, setPaidAtFromFilter] = useState("");
@@ -88,6 +96,15 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
     setPage(1);
     setIsLoading(true);
   }, []);
+
+  const handlePaymentTypeFilterChange = useCallback(
+    (value: PaymentType | "") => {
+      setPaymentTypeFilter(value);
+      setPage(1);
+      setIsLoading(true);
+    },
+    []
+  );
 
   const handleDueDateFromChange = useCallback((value: string) => {
     setDueDateFromFilter(value);
@@ -122,6 +139,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
     () => ({
       ...(debouncedName ? { name: debouncedName } : {}),
       ...(statusFilter ? { status: statusFilter } : {}),
+      ...(paymentTypeFilter ? { paymentType: paymentTypeFilter } : {}),
       ...(dueDateFromFilter ? { dueDateFrom: dueDateFromFilter } : {}),
       ...(dueDateToFilter ? { dueDateTo: dueDateToFilter } : {}),
       ...(paidAtFromFilter ? { paidAtFrom: paidAtFromFilter } : {}),
@@ -130,6 +148,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
     [
       debouncedName,
       statusFilter,
+      paymentTypeFilter,
       dueDateFromFilter,
       dueDateToFilter,
       paidAtFromFilter,
@@ -281,25 +300,40 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
         throw new Error("Data de pagamento inválida");
       }
 
-      const paidAtIso = dateOnlyToPaidAtIso(dateOnly);
-
       setIsSubmitting(true);
       try {
         const targetAccounts = accounts.filter((account) =>
           ids.includes(account.id)
         );
 
-        await Promise.all(
-          targetAccounts.map((account) =>
+        const simpleAccounts = targetAccounts.filter(
+          (account) => account.installments.length === 0
+        );
+        const installmentAccounts = targetAccounts.filter(
+          (account) => account.installments.length > 0
+        );
+
+        await Promise.all([
+          ...simpleAccounts.map((account) =>
             accountService.update(account.id, {
               name: account.name,
               amount: account.amount,
               dueDate: account.dueDate,
               status: "PAID",
-              paidAt: paidAtIso,
+              paidAt: dateOnly,
             })
-          )
-        );
+          ),
+          ...installmentAccounts.flatMap((account) =>
+            account.installments
+              .filter((installment) => installment.status !== "PAID")
+              .map((installment) =>
+                accountService.updateInstallment(account.id, installment.id, {
+                  status: "PAID",
+                  paidAt: dateOnly,
+                })
+              )
+          ),
+        ]);
 
         invalidateRequests();
         await fetchAccounts();
@@ -308,6 +342,28 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       }
     },
     [accounts, fetchAccounts, invalidateRequests]
+  );
+
+  const updateAccountInstallment = useCallback(
+    async (accountId: string, installmentId: string, paidAt: string) => {
+      const dateOnly = normalizeToDateOnly(paidAt);
+      if (!dateOnly) {
+        throw new Error("Data de pagamento inválida");
+      }
+
+      setIsSubmitting(true);
+      try {
+        await accountService.updateInstallment(accountId, installmentId, {
+          status: "PAID",
+          paidAt: dateOnly,
+        });
+        invalidateRequests();
+        await fetchAccounts();
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [fetchAccounts, invalidateRequests]
   );
 
   const value = useMemo<AccountsContextValue>(
@@ -319,6 +375,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       error,
       nameFilter,
       statusFilter,
+      paymentTypeFilter,
       dueDateFromFilter,
       dueDateToFilter,
       paidAtFromFilter,
@@ -327,6 +384,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       page,
       setNameFilter,
       setStatusFilter: handleStatusFilterChange,
+      setPaymentTypeFilter: handlePaymentTypeFilterChange,
       setDueDateFromFilter: handleDueDateFromChange,
       setDueDateToFilter: handleDueDateToChange,
       setPaidAtFromFilter: handlePaidAtFromChange,
@@ -337,6 +395,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       updateAccount,
       deleteAccount,
       bulkPayAccounts,
+      updateAccountInstallment,
     }),
     [
       accounts,
@@ -346,6 +405,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       error,
       nameFilter,
       statusFilter,
+      paymentTypeFilter,
       dueDateFromFilter,
       dueDateToFilter,
       paidAtFromFilter,
@@ -353,6 +413,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       exportListParams,
       page,
       handleStatusFilterChange,
+      handlePaymentTypeFilterChange,
       handleDueDateFromChange,
       handleDueDateToChange,
       handlePaidAtFromChange,
@@ -363,6 +424,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       updateAccount,
       deleteAccount,
       bulkPayAccounts,
+      updateAccountInstallment,
     ]
   );
 

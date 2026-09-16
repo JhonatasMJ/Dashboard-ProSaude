@@ -8,6 +8,7 @@ import {
 } from "react-hook-form";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { FILTER_FIELD_LABEL_CLASS } from "@/shared/constants/filter-field.constants";
 import { cn } from "@/lib/utils";
 
 type InputLabelProps<T extends FieldValues> = {
@@ -15,6 +16,8 @@ type InputLabelProps<T extends FieldValues> = {
   name: FieldPath<T>;
   control: Control<T>;
   containerClassName?: string;
+  /** Usa o mesmo tamanho compacto dos campos de filtro. */
+  compact?: boolean;
 } & Omit<
   React.ComponentProps<typeof Input>,
   "name" | "value" | "defaultValue" | "onChange" | "onBlur" | "ref"
@@ -25,6 +28,7 @@ export function InputLabel<T extends FieldValues>({
   name,
   control,
   containerClassName,
+  compact = false,
   className,
   id,
   type = "text",
@@ -40,8 +44,17 @@ export function InputLabel<T extends FieldValues>({
       name={name}
       control={control}
       render={({ field, fieldState }) => (
-        <div className={cn("flex flex-col gap-2.5", containerClassName)}>
-          <Label htmlFor={inputId} className="text-sm">
+        <div
+          className={cn(
+            "flex flex-col",
+            compact ? "gap-1.5" : "gap-2.5",
+            containerClassName
+          )}
+        >
+          <Label
+            htmlFor={inputId}
+            className={compact ? FILTER_FIELD_LABEL_CLASS : "text-sm"}
+          >
             {label}
           </Label>
           <div className="relative">
@@ -49,7 +62,11 @@ export function InputLabel<T extends FieldValues>({
               id={inputId}
               type={inputType}
               aria-invalid={!!fieldState.error}
-              className={cn(isPassword && "pr-12", className)}
+              className={cn(
+                compact && "h-9 pl-3 text-sm",
+                isPassword ? "pr-12" : compact && "pr-3",
+                className
+              )}
               {...field}
               {...inputProps}
             />

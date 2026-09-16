@@ -77,6 +77,7 @@ export function UserForm({
           label="Nome completo"
           autoComplete="name"
           placeholder="Nome do usuário"
+          compact
         />
 
         <InputLabel
@@ -86,6 +87,7 @@ export function UserForm({
           type="email"
           autoComplete="email"
           placeholder="usuario@empresa.com"
+          compact
         />
 
         <InputLabel
@@ -95,6 +97,7 @@ export function UserForm({
           type="password"
           autoComplete="new-password"
           placeholder="••••••••"
+          compact
         />
 
         <InputLabel
@@ -104,6 +107,7 @@ export function UserForm({
           type="password"
           autoComplete="new-password"
           placeholder="••••••••"
+          compact
         />
       </FormSection>
 

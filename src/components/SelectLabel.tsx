@@ -17,6 +17,11 @@ import {
   SearchableSelect,
   type SearchableSelectOption,
 } from "@/components/ui/SearchableSelect";
+import {
+  FILTER_FIELD_LABEL_CLASS,
+  FILTER_SEARCHABLE_SELECT_CLASS,
+  FILTER_SELECT_TRIGGER_CLASS,
+} from "@/shared/constants/filter-field.constants";
 import { cn } from "@/lib/utils";
 
 export type SelectOption = SearchableSelectOption;
@@ -34,6 +39,8 @@ type SelectLabelProps<T extends FieldValues> = {
   containerClassName?: string;
   disabled?: boolean;
   searchable?: boolean;
+  /** Usa o mesmo tamanho compacto dos campos de filtro. */
+  compact?: boolean;
 };
 
 export function SelectLabel<T extends FieldValues>({
@@ -46,6 +53,7 @@ export function SelectLabel<T extends FieldValues>({
   containerClassName,
   disabled = false,
   searchable = true,
+  compact = false,
 }: SelectLabelProps<T>) {
   const fieldId = String(name);
 
@@ -59,8 +67,17 @@ export function SelectLabel<T extends FieldValues>({
       name={name}
       control={control}
       render={({ field, fieldState }) => (
-        <div className={cn("flex w-full flex-col gap-2.5", containerClassName)}>
-          <Label htmlFor={fieldId} className="text-sm">
+        <div
+          className={cn(
+            "flex w-full flex-col",
+            compact ? "gap-1.5" : "gap-2.5",
+            containerClassName
+          )}
+        >
+          <Label
+            htmlFor={fieldId}
+            className={compact ? FILTER_FIELD_LABEL_CLASS : "text-sm"}
+          >
             {label}
           </Label>
 
@@ -74,6 +91,7 @@ export function SelectLabel<T extends FieldValues>({
               searchPlaceholder={searchPlaceholder}
               disabled={disabled}
               aria-invalid={!!fieldState.error}
+              className={cn(compact && FILTER_SEARCHABLE_SELECT_CLASS)}
             />
           ) : (
             <Select
@@ -86,7 +104,7 @@ export function SelectLabel<T extends FieldValues>({
                 id={fieldId}
                 aria-invalid={!!fieldState.error}
                 className={cn(
-                  triggerClassName,
+                  compact ? FILTER_SELECT_TRIGGER_CLASS : triggerClassName,
                   fieldState.error &&
                     "border-destructive ring-3 ring-destructive/20"
                 )}
