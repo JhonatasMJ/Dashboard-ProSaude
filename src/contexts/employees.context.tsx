@@ -9,7 +9,6 @@ import {
 } from "react";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
-  BULK_LIST_PAGE_SIZE,
   FILTER_DEBOUNCE_MS,
   TABLE_PAGE_SIZE,
 } from "@/shared/constants/app.constants";
@@ -24,6 +23,7 @@ import type { ICompany } from "@/shared/interfaces/https/company";
 import type { IEmployee } from "@/shared/interfaces/https/employee";
 import type { IPaginationMeta } from "@/shared/interfaces/https/pagination";
 import { companyService } from "@/shared/services/company.service";
+import { fetchAllPaginated } from "@/shared/helpers/fetch-all-paginated.helper";
 import { employeeService } from "@/shared/services/employee.service";
 
 export interface EmployeesContextValue {
@@ -87,11 +87,12 @@ export function EmployeesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    companyService
-      .list({ page: 1, pageSize: BULK_LIST_PAGE_SIZE })
-      .then((response) => {
+    fetchAllPaginated((page, pageSize) =>
+      companyService.list({ page, pageSize })
+    )
+      .then((data) => {
         if (!active) return;
-        setCompanies(response.data);
+        setCompanies(data);
       })
       .catch(() => {
         if (!active) return;

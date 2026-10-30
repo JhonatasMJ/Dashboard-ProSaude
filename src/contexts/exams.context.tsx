@@ -9,12 +9,12 @@ import {
 } from "react";
 import { useRequestGeneration } from "@/hooks/use-request-generation";
 import {
-  BULK_LIST_PAGE_SIZE,
   FILTER_DEBOUNCE_MS,
   TABLE_PAGE_SIZE,
 } from "@/shared/constants/app.constants";
 import type { ICompany } from "@/shared/interfaces/https/company";
 import { companyService } from "@/shared/services/company.service";
+import { fetchAllPaginated } from "@/shared/helpers/fetch-all-paginated.helper";
 import { getApiErrorMessage } from "@/shared/helpers/api-error.helper";
 import { isAllCompaniesExamSelection } from "@/shared/constants/exam.constants";
 import {
@@ -89,11 +89,12 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
-    companyService
-      .list({ page: 1, pageSize: BULK_LIST_PAGE_SIZE })
-      .then((response) => {
+    fetchAllPaginated((page, pageSize) =>
+      companyService.list({ page, pageSize })
+    )
+      .then((data) => {
         if (!active) return;
-        setCompanies(response.data);
+        setCompanies(data);
       })
       .catch(() => {
         if (!active) return;
@@ -224,12 +225,10 @@ export function ExamsProvider({ children }: { children: ReactNode }) {
 
         if (isAllCompaniesExamSelection(formData.companyId)) {
           const normalizedName = formData.name.trim().toLowerCase();
-          const listResponse = await examService.list({
-            page: 1,
-            pageSize: BULK_LIST_PAGE_SIZE,
-            name: formData.name.trim(),
-          });
-          const targets = listResponse.data.filter(
+          const examsWithName = await fetchAllPaginated((page, pageSize) =>
+            examService.list({ page, pageSize, name: formData.name.trim() })
+          );
+          const targets = examsWithName.filter(
             (item) => item.name.trim().toLowerCase() === normalizedName
           );
 
